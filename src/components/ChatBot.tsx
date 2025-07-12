@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Globe, Mic, MicOff, Volume2, VolumeX, Settings, RefreshCw, Copy, Download, ChevronDown } from 'lucide-react';
+import { Send, Bot, User, Globe, Zap, Database, Copy, Share2, ThumbsUp, ThumbsDown, Bookmark, Trash2, Download, Mic, MicOff, Settings, MoreHorizontal, Lightbulb, Brain, BarChart3, Building2, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { EVA_COMPANY_DATA, CONVERSATION_DATABASE, CONVERSATION_PATTERNS } from '@/data/evaData';
-import { GroqService, detectLanguage, detectTone } from '@/services/groqService';
-import evaLogo from '@/assets/eva-logo-official.png';
+import { cn } from '@/lib/utils';
+import { EVA_COMPANY_DATA, SMART_RESPONSES } from '@/data/evaData';
 
 interface Message {
   id: string;
@@ -16,506 +16,542 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
   language: 'ar' | 'en';
-  tone?: 'formal' | 'informal';
-  source?: 'eva' | 'groq';
+  tone: 'formal' | 'friendly';
+  source?: 'eva' | 'grok';
+  rating?: 'like' | 'dislike';
+  isBookmarked?: boolean;
 }
 
-interface ChatbotProps {
-  apiKey?: string;
+type ChatMode = 'normal' | 'creative' | 'analytical';
+
+interface LanguageToggleProps {
+  currentLanguage: 'ar' | 'en';
+  onLanguageChange: (lang: 'ar' | 'en') => void;
 }
 
-const EvaChatbot: React.FC<ChatbotProps> = ({ apiKey = 'demo-key' }) => {
+const LanguageToggle = ({ currentLanguage, onLanguageChange }: LanguageToggleProps) => (
+  <div className="flex gap-2">
+    <Button
+      variant={currentLanguage === 'ar' ? 'default' : 'outline'}
+      size="sm"
+      onClick={() => onLanguageChange('ar')}
+      className="text-xs"
+    >
+      العربية
+    </Button>
+    <Button
+      variant={currentLanguage === 'en' ? 'default' : 'outline'}
+      size="sm"
+      onClick={() => onLanguageChange('en')}
+      className="text-xs"
+    >
+      English
+    </Button>
+  </div>
+);
+
+const detectTone = (text: string): 'formal' | 'friendly' => {
+  const friendlyIndicators = ['يا', 'اهلا', 'ازيك', 'hello', 'hi', 'hey', 'thanks', 'شكرا'];
+  const formalIndicators = ['حضرتك', 'سيادتكم', 'sir', 'madam', 'please', 'kindly', 'من فضلك'];
+  
+  const lowerText = text.toLowerCase();
+  const friendlyCount = friendlyIndicators.filter(word => lowerText.includes(word)).length;
+  const formalCount = formalIndicators.filter(word => lowerText.includes(word)).length;
+  
+  return friendlyCount > formalCount ? 'friendly' : 'formal';
+};
+
+const detectLanguage = (text: string): 'ar' | 'en' => {
+  const arabicPattern = /[\u0600-\u06FF]/;
+  return arabicPattern.test(text) ? 'ar' : 'en';
+};
+
+const getResponse = async (message: string, language: 'ar' | 'en', tone: 'formal' | 'friendly'): Promise<{ content: string; source: 'eva' | 'grok' }> => {
+  const lowerMessage = message.toLowerCase();
+  
+  // Check for company information
+  if (lowerMessage.includes('شركة') || lowerMessage.includes('company') || lowerMessage.includes('إيفا') || lowerMessage.includes('eva')) {
+    const info = EVA_COMPANY_DATA.company;
+    if (language === 'ar') {
+      return {
+        content: tone === 'friendly' 
+          ? `إيفا شركة رائعة! 😊 تأسست في ${info.established} وبقالها خبرة كبيرة في ${info.industry}. عندنا ${info.employees} موظف ومقرنا الرئيسي في ${info.headquarters}. رؤيتنا هي: ${info.vision}`
+          : `شركة إيفا تأسست عام ${info.established} وتعمل في مجال ${info.industry}. لدينا ${info.employees} موظف مع مقر رئيسي في ${info.headquarters}. رؤية الشركة: ${info.vision}`,
+        source: 'eva'
+      };
+    } else {
+      return {
+        content: tone === 'friendly'
+          ? `Eva is an amazing company! 😊 Founded in ${info.established}, we've got great experience in ${info.industry}. We have ${info.employees} employees with headquarters in ${info.headquartersEn}. Our vision: ${info.visionEn}`
+          : `Eva Company was established in ${info.established} and operates in ${info.industry}. We have ${info.employees} employees with headquarters in ${info.headquartersEn}. Company vision: ${info.visionEn}`,
+        source: 'eva'
+      };
+    }
+  }
+
+  // Check for services
+  if (lowerMessage.includes('خدمات') || lowerMessage.includes('services') || lowerMessage.includes('تطوير') || lowerMessage.includes('development')) {
+    const services = EVA_COMPANY_DATA.services;
+    if (language === 'ar') {
+      return {
+        content: tone === 'friendly'
+          ? `عندنا خدمات كتير حلوة! 😊 زي ${services.softwareDevelopment.name} (${services.softwareDevelopment.pricing})، ${services.digitalTransformation.name}، ${services.cloudSolutions.name}، و ${services.ecommerce.name}. كلها بأحدث التقنيات!`
+          : `تقدم شركة إيفا خدمات متنوعة تشمل: ${services.softwareDevelopment.name} بسعر ${services.softwareDevelopment.pricing}، ${services.digitalTransformation.name}، ${services.cloudSolutions.name}، و ${services.ecommerce.name}.`,
+        source: 'eva'
+      };
+    } else {
+      return {
+        content: tone === 'friendly'
+          ? `We have amazing services! 😊 Like ${services.softwareDevelopment.nameEn} (${services.softwareDevelopment.pricingEn}), ${services.digitalTransformation.nameEn}, ${services.cloudSolutions.nameEn}, and ${services.ecommerce.nameEn}. All with latest tech!`
+          : `Eva Company offers diverse services including: ${services.softwareDevelopment.nameEn} starting at ${services.softwareDevelopment.pricingEn}, ${services.digitalTransformation.nameEn}, ${services.cloudSolutions.nameEn}, and ${services.ecommerce.nameEn}.`,
+        source: 'eva'
+      };
+    }
+  }
+
+  // Check for contact information
+  if (lowerMessage.includes('تواصل') || lowerMessage.includes('contact') || lowerMessage.includes('اتصال') || lowerMessage.includes('phone') || lowerMessage.includes('email')) {
+    const contact = EVA_COMPANY_DATA.contact;
+    if (language === 'ar') {
+      return {
+        content: tone === 'friendly'
+          ? `أكيد! تقدر تتواصل معانا بسهولة 😊\n📞 ${contact.phone}\n📧 ${contact.email}\n🌐 ${contact.website}\n📍 ${contact.address}\n⏰ ساعات العمل: ${contact.workingHours}`
+          : `معلومات التواصل مع شركة إيفا:\nالهاتف: ${contact.phone}\nالبريد الإلكتروني: ${contact.email}\nالموقع: ${contact.website}\nالعنوان: ${contact.address}\nساعات العمل: ${contact.workingHours}`,
+        source: 'eva'
+      };
+    } else {
+      return {
+        content: tone === 'friendly'
+          ? `Sure! You can easily reach us 😊\n📞 ${contact.phone}\n📧 ${contact.email}\n🌐 ${contact.website}\n📍 ${contact.addressEn}\n⏰ Working hours: ${contact.workingHoursEn}`
+          : `Eva Company contact information:\nPhone: ${contact.phone}\nEmail: ${contact.email}\nWebsite: ${contact.website}\nAddress: ${contact.addressEn}\nWorking hours: ${contact.workingHoursEn}`,
+        source: 'eva'
+      };
+    }
+  }
+
+  // Check for statistics
+  if (lowerMessage.includes('إحصائيات') || lowerMessage.includes('statistics') || lowerMessage.includes('أرقام') || lowerMessage.includes('نجاح')) {
+    const stats = EVA_COMPANY_DATA.statistics;
+    if (language === 'ar') {
+      return {
+        content: tone === 'friendly'
+          ? `أرقامنا جامدة جداً! 🚀\n✅ ${stats.projectsCompleted}\n📈 ${stats.successRate}\n😊 ${stats.clientSatisfaction}\n⚡ وقت الاستجابة: ${stats.responseTime}\n🔄 ${stats.uptime}`
+          : `إحصائيات شركة إيفا:\nالمشاريع المكتملة: ${stats.projectsCompleted}\nمعدل النجاح: ${stats.successRate}\nرضا العملاء: ${stats.clientSatisfaction}\nوقت الاستجابة: ${stats.responseTime}\nوقت التشغيل: ${stats.uptime}`,
+        source: 'eva'
+      };
+    } else {
+      return {
+        content: tone === 'friendly'
+          ? `Our numbers are amazing! 🚀\n✅ ${stats.projectsCompletedEn}\n📈 ${stats.successRateEn}\n😊 ${stats.clientSatisfactionEn}\n⚡ Response time: ${stats.responseTimeEn}\n🔄 ${stats.uptimeEn}`
+          : `Eva Company statistics:\nCompleted projects: ${stats.projectsCompletedEn}\nSuccess rate: ${stats.successRateEn}\nClient satisfaction: ${stats.clientSatisfactionEn}\nResponse time: ${stats.responseTimeEn}\nUptime: ${stats.uptimeEn}`,
+        source: 'eva'
+      };
+    }
+  }
+
+  // Use smart responses for general queries
+  const responses = SMART_RESPONSES[language];
+  if (lowerMessage.includes('مرحبا') || lowerMessage.includes('أهلا') || lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+    const greetings = responses.generalGreeting;
+    return {
+      content: greetings[Math.floor(Math.random() * greetings.length)],
+      source: 'eva'
+    };
+  }
+
+  // Default fallback
+  const fallbackResponses = {
+    ar: {
+      friendly: 'معلش، مش لاقي المعلومة دي في بيانات إيفا بالتفصيل، بس حسب معرفتي العامة... 🤔',
+      formal: 'نعتذر، لم نجد هذه المعلومة في قاعدة بيانات إيفا المباشرة، ولكن وفقاً للمعرفة العامة...'
+    },
+    en: {
+      friendly: 'Sorry, couldn\'t find that specific info in Eva\'s database, but based on my general knowledge... 🤔',
+      formal: 'We apologize, this specific information was not found in Eva\'s direct database, however based on general knowledge...'
+    }
+  };
+
+  return { content: fallbackResponses[language][tone], source: 'grok' };
+};
+
+export const ChatBot = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [language, setLanguage] = useState<'ar' | 'en'>('ar');
-  const [detectedTone, setDetectedTone] = useState<'formal' | 'informal'>('informal');
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [groqService] = useState(() => new GroqService(apiKey));
-  const [conversationMode, setConversationMode] = useState<'smart' | 'eva-only' | 'ai-only'>('smart');
+  const [isTyping, setIsTyping] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState<'ar' | 'en'>('ar');
+  const [isRecording, setIsRecording] = useState(false);
+  const [chatMode, setChatMode] = useState<ChatMode>('normal');
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [savedChats, setSavedChats] = useState<Message[][]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Initialize with welcome message
-  useEffect(() => {
-    const welcomeMessage: Message = {
-      id: '1',
-      content: language === 'ar' 
-        ? 'أهلاً وسهلاً! أنا مساعد إيفا الذكي 🤖 إزيك النهاردة؟ أقدر أساعدك في أي حاجة خاصة بشركة إيفا أو أي استفسارات تانية! اكتب بالعربي أو الإنجليزي زي ما تحب، وهاكتشف إذا كنت عايز تتكلم بشكل رسمي ولا ودود.'
-        : 'Hello and welcome! I\'m Eva\'s smart assistant 🤖 How are you today? I can help you with anything about Eva Company or any other inquiries! Write in Arabic or English as you prefer, and I\'ll detect whether you want to communicate formally or friendly.',
-      isUser: false,
-      timestamp: new Date(),
-      language,
-      tone: 'informal',
-      source: 'eva'
-    };
-    setMessages([welcomeMessage]);
-  }, []);
+  const chatModes = [
+    { id: 'normal', name: { ar: 'عادي', en: 'Normal' }, icon: Bot },
+    { id: 'creative', name: { ar: 'إبداعي', en: 'Creative' }, icon: Lightbulb },
+    { id: 'analytical', name: { ar: 'تحليلي', en: 'Analytical' }, icon: BarChart3 }
+  ];
 
-  // Scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Enhanced Eva data search with comprehensive matching - NO EMPTY RESPONSES
-  const searchEvaData = (query: string, userLanguage: 'ar' | 'en'): string => {
-    const lowerQuery = query.toLowerCase();
-    const data = EVA_COMPANY_DATA;
-    
-    // First check the conversation database for exact or similar matches
-    const matchingConversations = CONVERSATION_DATABASE.conversations.filter(conv => {
-      const queryLower = conv.userQuery.toLowerCase();
-      return queryLower.includes(lowerQuery) || lowerQuery.includes(queryLower) ||
-             conv.userQuery.split(' ').some(word => lowerQuery.includes(word.toLowerCase()));
-    });
-
-    if (matchingConversations.length > 0) {
-      // Sort by language match and return the best match
-      const languageMatches = matchingConversations.filter(conv => conv.language === userLanguage);
-      if (languageMatches.length > 0) {
-        return languageMatches[0].botResponse;
-      }
-      return matchingConversations[0].botResponse;
-    }
-
-    const names = ['حبيبي', 'صديقي', 'بطل', 'محترم', 'استاذ', 'يا فندم'];
-    const englishNames = ['buddy', 'friend', 'dear', 'sir', 'mate'];
-
-    // Enhanced greetings detection
-    if (lowerQuery.includes('hello') || lowerQuery.includes('hi') || lowerQuery.includes('أهلا') ||
-        lowerQuery.includes('مرحبا') || lowerQuery.includes('السلام') || lowerQuery.includes('صباح') ||
-        lowerQuery.includes('مساء') || lowerQuery.includes('إزيك') || lowerQuery.includes('ازيك') ||
-        lowerQuery.includes('ازاي') || lowerQuery.includes('عامل') || lowerQuery.includes('اخبارك') ||
-        lowerQuery.includes('أزيك') || lowerQuery.includes('ايه أخبارك') || lowerQuery.includes('إيه أخبارك') ||
-        lowerQuery.includes('good morning') || lowerQuery.includes('good evening') || lowerQuery.includes('hey') ||
-        lowerQuery.includes('what\'s up') || lowerQuery.includes('whats up')) {
-      return userLanguage === 'ar'
-        ? `أهلاً وسهلاً! ${names[Math.floor(Math.random() * names.length)]} 🌟 أنا مساعد إيفا الذكي، هنا علشان أساعدك في كل اللي تحتاجه!\n\n🚀 أقدر أساعدك في:\n• معرفة خدماتنا ومنتجاتنا الكاملة\n• معلومات عن الأسعار والعروض الحالية\n• تفاصيل المشاريع والتدريبات المتاحة\n• التواصل مع الفريق والدعم الفني\n• نصائح للعناية والجمال\n• معلومات عن جودة وشهادات إيفا\n\n💬 ممكن تسألني عن أي حاجة تخص إيفا أو أي استفسار تقني عام! إزاي أقدر أساعدك النهاردة؟ 😊`
-        : `Hello there! ${englishNames[Math.floor(Math.random() * englishNames.length)]} 🌟 I'm Eva's intelligent assistant, here to help you with everything you need!\n\n🚀 I can assist you with:\n• Complete information about our services and products\n• Current pricing and promotional offers\n• Available projects and training details\n• Team contact and technical support\n• Beauty and care tips\n• Information about Eva's quality and certifications\n\n💬 Feel free to ask me anything about Eva or any general technical questions! How can I help you today? 😊`;
-    }
-    
-    // Company information - expanded
-    if (lowerQuery.includes('company') || lowerQuery.includes('شركة') || lowerQuery.includes('إيفا') || 
-        lowerQuery.includes('eva') || lowerQuery.includes('about') || lowerQuery.includes('عن') ||
-        lowerQuery.includes('تأسست') || lowerQuery.includes('founded') || lowerQuery.includes('history')) {
-      return userLanguage === 'ar' 
-        ? `🏢 شركة إيفا - قصة نجاح تقنية مميزة!\n\n📅 تأسست: ${data.company.established}\n📍 المقر الرئيسي: ${data.company.headquarters}\n🏢 الفروع: ${data.company.branches.join(' • ')}\n👥 فريق العمل: ${data.company.employees}\n💰 الإيرادات: ${data.company.revenue}\n📈 النمو: ${data.company.growth}\n\n🏆 الجوائز:\n${data.company.awards.map(award => `• ${award}`).join('\n')}\n\n📜 الشهادات:\n${data.company.certifications.join(' • ')}\n\n✨ رسالتنا: ${data.company.mission}\n🎯 رؤيتنا: ${data.company.vision}\n\n💡 قيمنا الأساسية:\n${data.company.values.map(value => `• ${value}`).join('\n')}\n\nإحنا مش مجرد شركة تكنولوجيا، إحنا شركاء نجاحك في العصر الرقمي! 🚀`
-        : `🏢 Eva Company - A Distinguished Tech Success Story!\n\n📅 Established: ${data.company.established}\n📍 Headquarters: ${data.company.headquartersEn}\n🏢 Branches: ${data.company.branchesEn.join(' • ')}\n👥 Team: ${data.company.employees}\n💰 Revenue: ${data.company.revenueEn}\n📈 Growth: ${data.company.growthEn}\n\n🏆 Awards:\n${data.company.awardsEn.map(award => `• ${award}`).join('\n')}\n\n📜 Certifications:\n${data.company.certifications.join(' • ')}\n\n✨ Our mission: ${data.company.missionEn}\n🎯 Our vision: ${data.company.visionEn}\n\n💡 Core values:\n${data.company.valuesEn.map(value => `• ${value}`).join('\n')}\n\nWe're not just a tech company, we're your success partners in the digital age! 🚀`;
-    }
-
-    // Services - comprehensive
-    if (lowerQuery.includes('service') || lowerQuery.includes('خدمة') || lowerQuery.includes('خدمات') || 
-        lowerQuery.includes('development') || lowerQuery.includes('تطوير') || lowerQuery.includes('solutions') ||
-        lowerQuery.includes('حلول') || lowerQuery.includes('products') || lowerQuery.includes('منتجات')) {
-      const services = Object.values(data.services);
-      const servicesList = services.map((service, index) => 
-        userLanguage === 'ar' 
-          ? `${index + 1}. 💼 ${service.name}:\n   📝 ${service.description}${'pricing' in service ? `\n   💰 السعر: ${service.pricing}` : ''}`
-          : `${index + 1}. 💼 ${service.nameEn}:\n   📝 ${service.descriptionEn}${'pricingEn' in service ? `\n   💰 Price: ${service.pricingEn}` : ''}`
-      ).join('\n\n');
-      
-      return userLanguage === 'ar'
-        ? `🚀 خدماتنا المتميزة والشاملة:\n\n${servicesList}\n\n📊 إحصائياتنا المشرّفة:\n• ${data.statistics.projectsCompleted}\n• ${data.statistics.successRate}\n• ${data.statistics.clientSatisfaction}\n• وقت الاستجابة: ${data.statistics.responseTime}\n\n🎯 عايز تعرف تفاصيل أكتر عن خدمة معينة؟ اسألني براحتك! أو لو محتاج استشارة مجانية، أنا هنا! 💪`
-        : `🚀 Our Distinguished and Comprehensive Services:\n\n${servicesList}\n\n📊 Our Outstanding Statistics:\n• ${data.statistics.projectsCompletedEn}\n• ${data.statistics.successRateEn}\n• ${data.statistics.clientSatisfactionEn}\n• Response time: ${data.statistics.responseTimeEn}\n\n🎯 Want to know more details about a specific service? Just ask! Or if you need a free consultation, I'm here! 💪`;
-    }
-
-    // Projects and case studies
-    if (lowerQuery.includes('project') || lowerQuery.includes('مشروع') || lowerQuery.includes('مشاريع') ||
-        lowerQuery.includes('portfolio') || lowerQuery.includes('case') || lowerQuery.includes('دراسة حالة') ||
-        lowerQuery.includes('examples') || lowerQuery.includes('أمثلة')) {
-      const projects = Object.values(data.projects);
-      const projectsList = projects.map((project, index) =>
-        userLanguage === 'ar'
-          ? `${index + 1}. 🎯 ${project.name}:\n   📋 ${project.description}\n   ⏰ المدة: ${project.timeline}\n   🛠️ التقنيات: ${project.technologies.join(', ')}\n   ✨ الميزات: ${project.features.join(' • ')}`
-          : `${index + 1}. 🎯 ${project.nameEn}:\n   📋 ${project.descriptionEn}\n   ⏰ Timeline: ${project.timelineEn}\n   🛠️ Technologies: ${project.technologies.join(', ')}\n   ✨ Features: ${project.features.join(' • ')}`
-      ).join('\n\n');
-      
-      return userLanguage === 'ar'
-        ? `💼 مشاريعنا الناجحة والمميزة:\n\n${projectsList}\n\n📈 ${data.statistics.projectsCompleted} مع ${data.statistics.successRate}\n\nكل مشروع بنعمله بحب واهتمام عشان نضمن نجاحك! 🌟 عايز تشوف مشاريع أكتر؟ أو عايز نبدأ مشروعك؟`
-        : `💼 Our Successful and Distinguished Projects:\n\n${projectsList}\n\n📈 ${data.statistics.projectsCompletedEn} with ${data.statistics.successRateEn}\n\nEvery project we create with love and attention to ensure your success! 🌟 Want to see more projects? Or want to start your project?`;
-    }
-
-    // Training and courses
-    if (lowerQuery.includes('training') || lowerQuery.includes('تدريب') || lowerQuery.includes('course') ||
-        lowerQuery.includes('دورة') || lowerQuery.includes('دورات') || lowerQuery.includes('learning') ||
-        lowerQuery.includes('تعلم') || lowerQuery.includes('education') || lowerQuery.includes('تعليم')) {
-      const courses = data.training.courses;
-      const coursesList = courses.map((course, index) =>
-        userLanguage === 'ar'
-          ? `${index + 1}. 📚 ${course.name}:\n   ⏰ المدة: ${course.duration}\n   💰 السعر: ${course.price}\n   📊 المستوى: ${course.level}`
-          : `${index + 1}. 📚 ${course.nameEn}:\n   ⏰ Duration: ${course.durationEn}\n   💰 Price: ${course.priceEn}\n   📊 Level: ${course.levelEn}`
-      ).join('\n\n');
-      
-      return userLanguage === 'ar'
-        ? `🎓 دوراتنا التدريبية المتخصصة:\n\n${coursesList}\n\n🏆 الشهادات المتاحة:\n${data.training.certifications.map(cert => `• ${cert}`).join('\n')}\n\n💼 مع إيفا، التعلم مش مجرد معلومات، ده استثمار في مستقبلك المهني! عايز تعرف أكتر عن دورة معينة؟`
-        : `🎓 Our Specialized Training Courses:\n\n${coursesList}\n\n🏆 Available Certifications:\n${data.training.certificationsEn.map(cert => `• ${cert}`).join('\n')}\n\n💼 With Eva, learning isn't just information, it's an investment in your professional future! Want to know more about a specific course?`;
-    }
-
-    // Contact information - enhanced
-    if (lowerQuery.includes('contact') || lowerQuery.includes('تواصل') || lowerQuery.includes('رقم') || 
-        lowerQuery.includes('ايميل') || lowerQuery.includes('email') || lowerQuery.includes('phone') ||
-        lowerQuery.includes('address') || lowerQuery.includes('عنوان') || lowerQuery.includes('location') ||
-        lowerQuery.includes('موقع') || lowerQuery.includes('اتصال') || lowerQuery.includes('call')) {
-      return userLanguage === 'ar'
-        ? `📞 معلومات التواصل الكاملة:\n\n🏢 المقر الرئيسي:\n📍 ${data.contact.address}\n\n📱 أرقام التواصل:\n• الهاتف الرئيسي: ${data.contact.phone}\n\n📧 البريد الإلكتروني:\n• الإيميل العام: ${data.contact.email}\n• الدعم الفني: ${data.contact.supportEmail}\n• المبيعات: ${data.contact.salesEmail}\n\n🌐 الموقع الإلكتروني: ${data.contact.website}\n\n🕒 ساعات العمل: ${data.contact.workingHours}\n\n🏢 فروعنا الأخرى:\n${data.company.branches.map(branch => `• ${branch}`).join('\n')}\n\n💬 إحنا دايماً مستعدين نساعدك! اتصل بينا في أي وقت! 🤝`
-        : `📞 Complete Contact Information:\n\n🏢 Headquarters:\n📍 ${data.contact.addressEn}\n\n📱 Contact Numbers:\n• Main Phone: ${data.contact.phone}\n\n📧 Email Addresses:\n• General Email: ${data.contact.email}\n• Technical Support: ${data.contact.supportEmail}\n• Sales: ${data.contact.salesEmail}\n\n🌐 Website: ${data.contact.website}\n\n🕒 Working Hours: ${data.contact.workingHoursEn}\n\n🏢 Other Branches:\n${data.company.branchesEn.map(branch => `• ${branch}`).join('\n')}\n\n💬 We're always ready to help! Contact us anytime! 🤝`;
-    }
-
-    // Pricing - comprehensive
-    if (lowerQuery.includes('price') || lowerQuery.includes('cost') || lowerQuery.includes('سعر') || 
-        lowerQuery.includes('تكلفة') || lowerQuery.includes('فلوس') || lowerQuery.includes('budget') ||
-        lowerQuery.includes('quote') || lowerQuery.includes('عرض سعر') || lowerQuery.includes('ميزانية')) {
-      return userLanguage === 'ar'
-        ? `💰 أسعارنا التنافسية والمرنة:\n\n🏗️ الخدمات الأساسية:\n• تطوير التطبيقات: ${data.services.softwareDevelopment.pricing}\n• نظام إدارة العملاء: ${data.products.evaCRM.pricing}\n\n📚 الدورات التدريبية:\n${data.training.courses.map(course => `• ${course.name}: ${course.price}`).join('\n')}\n\n⭐ العوامل المؤثرة على السعر:\n• تعقيد المشروع والميزات المطلوبة\n• التقنيات المستخدمة\n• المدة الزمنية المطلوبة\n• حجم الفريق المطلوب\n• مستوى الدعم المطلوب\n\n🎯 مميزات خاصة:\n• استشارة مجانية أولى\n• ضمان الجودة\n• دعم فني مستمر\n• أسعار مرنة حسب الميزانية\n\n💼 عايز عرض سعر مخصوص؟ احكيلي عن مشروعك وهاعملك عرض مناسب لميزانيتك! 🤝`
-        : `💰 Our Competitive and Flexible Pricing:\n\n🏗️ Core Services:\n• Software Development: ${data.services.softwareDevelopment.pricingEn}\n• CRM System: ${data.products.evaCRM.pricingEn}\n\n📚 Training Courses:\n${data.training.courses.map(course => `• ${course.nameEn}: ${course.priceEn}`).join('\n')}\n\n⭐ Factors Affecting Price:\n• Project complexity and required features\n• Technologies used\n• Required timeline\n• Team size needed\n• Level of support required\n\n🎯 Special Benefits:\n• Free initial consultation\n• Quality guarantee\n• Continuous technical support\n• Flexible pricing based on budget\n\n💼 Want a custom quote? Tell me about your project and I'll create a suitable offer for your budget! 🤝`;
-    }
-
-    // Team and careers
-    if (lowerQuery.includes('team') || lowerQuery.includes('فريق') || lowerQuery.includes('موظف') || 
-        lowerQuery.includes('staff') || lowerQuery.includes('employees') || lowerQuery.includes('career') ||
-        lowerQuery.includes('وظيفة') || lowerQuery.includes('وظائف') || lowerQuery.includes('job') ||
-        lowerQuery.includes('work') || lowerQuery.includes('شغل') || lowerQuery.includes('hiring')) {
-      const positions = data.careers.openPositions;
-      const positionsList = positions.map((pos, index) =>
-        userLanguage === 'ar'
-          ? `${index + 1}. 💼 ${pos.title}\n   📍 المكان: ${pos.location}\n   ⏰ النوع: ${pos.type}\n   📊 الخبرة: ${pos.experience}`
-          : `${index + 1}. 💼 ${pos.titleEn}\n   📍 Location: ${pos.locationEn}\n   ⏰ Type: ${pos.typeEn}\n   📊 Experience: ${pos.experienceEn}`
-      ).join('\n\n');
-      
-      return userLanguage === 'ar'
-        ? `👥 فريق العمل المتميز وفرص العمل:\n\n🌟 فريقنا الحالي:\n👨‍💻 ${data.team.departments.development}\n🎨 ${data.team.departments.design}\n📈 ${data.team.departments.marketing}\n🛠️ ${data.team.departments.support}\n\n👔 القيادة:\n${data.team.leadership.map(leader => `• ${leader.name} - ${leader.position} (${leader.experience})`).join('\n')}\n\n💼 وظائف متاحة حالياً:\n\n${positionsList}\n\n🎁 مزايا العمل معنا:\n${data.careers.benefits.map(benefit => `• ${benefit}`).join('\n')}\n\n🚀 إحنا دايماً بندور على المواهب المميزة! عايز تنضملنا؟ ابعتلنا CV على ${data.contact.email}`
-        : `👥 Our Exceptional Team and Job Opportunities:\n\n🌟 Our Current Team:\n👨‍💻 ${data.team.departments.developmentEn}\n🎨 ${data.team.departments.designEn}\n📈 ${data.team.departments.marketingEn}\n🛠️ ${data.team.departments.supportEn}\n\n👔 Leadership:\n${data.team.leadership.map(leader => `• ${leader.nameEn} - ${leader.positionEn} (${leader.experienceEn})`).join('\n')}\n\n💼 Currently Available Positions:\n\n${positionsList}\n\n🎁 Benefits of Working With Us:\n${data.careers.benefitsEn.map(benefit => `• ${benefit}`).join('\n')}\n\n🚀 We're always looking for exceptional talents! Want to join us? Send your CV to ${data.contact.email}`;
-    }
-
-    // Technologies - expanded
-    if (lowerQuery.includes('technology') || lowerQuery.includes('tech') || lowerQuery.includes('تكنولوجيا') || 
-        lowerQuery.includes('تقنية') || lowerQuery.includes('برمجة') || lowerQuery.includes('programming') ||
-        lowerQuery.includes('tools') || lowerQuery.includes('أدوات') || lowerQuery.includes('stack') ||
-        lowerQuery.includes('framework') || lowerQuery.includes('library')) {
-      return userLanguage === 'ar'
-        ? `💻 تقنياتنا المتقدمة وأدواتنا الاحترافية:\n\n🎨 تطوير الواجهات الأمامية:\n${data.technologies.frontend.map(tech => `• ${tech}`).join('\n')}\n\n⚙️ تطوير الخوادم والبنية التحتية:\n${data.technologies.backend.map(tech => `• ${tech}`).join('\n')}\n\n📱 تطوير تطبيقات الموبايل:\n${data.technologies.mobile.map(tech => `• ${tech}`).join('\n')}\n\n🗄️ إدارة قواعد البيانات:\n${data.technologies.database.map(tech => `• ${tech}`).join('\n')}\n\n☁️ الحوسبة السحابية والاستضافة:\n${data.technologies.cloud.map(tech => `• ${tech}`).join('\n')}\n\n🧠 الذكاء الاصطناعي والتعلم الآلي:\n${data.technologies.ai.map(tech => `• ${tech}`).join('\n')}\n\n🔒 الأمان والامتثال:\n${data.security.standards.map(std => `• ${std}`).join('\n')}\n\n✨ إحنا مش بنجري وراء الموضة، إحنا بنختار التقنيات اللي تحقق أفضل النتائج لمشروعك! 🎯`
-        : `💻 Our Advanced Technologies and Professional Tools:\n\n🎨 Frontend Development:\n${data.technologies.frontend.map(tech => `• ${tech}`).join('\n')}\n\n⚙️ Backend Development and Infrastructure:\n${data.technologies.backend.map(tech => `• ${tech}`).join('\n')}\n\n📱 Mobile App Development:\n${data.technologies.mobile.map(tech => `• ${tech}`).join('\n')}\n\n🗄️ Database Management:\n${data.technologies.database.map(tech => `• ${tech}`).join('\n')}\n\n☁️ Cloud Computing and Hosting:\n${data.technologies.cloud.map(tech => `• ${tech}`).join('\n')}\n\n🧠 Artificial Intelligence and Machine Learning:\n${data.technologies.ai.map(tech => `• ${tech}`).join('\n')}\n\n🔒 Security and Compliance:\n${data.security.standards.map(std => `• ${std}`).join('\n')}\n\n✨ We don't chase trends, we choose technologies that deliver the best results for your project! 🎯`;
-    }
-
-    // Security and compliance
-    if (lowerQuery.includes('security') || lowerQuery.includes('أمان') || lowerQuery.includes('أمن') ||
-        lowerQuery.includes('privacy') || lowerQuery.includes('خصوصية') || lowerQuery.includes('compliance') ||
-        lowerQuery.includes('امتثال') || lowerQuery.includes('certification') || lowerQuery.includes('شهادة')) {
-      return userLanguage === 'ar'
-        ? `🔒 الأمان والخصوصية - أولويتنا القصوى:\n\n🛡️ معايير الأمان:\n${data.security.standards.map(std => `• ${std}`).join('\n')}\n\n🔐 التشفير: ${data.security.encryption}\n💾 النسخ الاحتياطية: ${data.security.backups}\n👁️ المراقبة: ${data.security.monitoring}\n⏰ وقت التشغيل: ${data.statistics.uptime}\n\n📋 الشهادات والامتثال:\n${data.company.certifications.map(cert => `• ${cert}`).join('\n')}\n\n🌟 الشراكات التقنية الآمنة:\n${data.partnerships.technology.map(partner => `• ${partner}`).join('\n')}\n\n🛡️ أمان معلوماتك مش مجرد وعد، ده التزام نعيش عليه كل يوم! 💪`
-        : `🔒 Security and Privacy - Our Top Priority:\n\n🛡️ Security Standards:\n${data.security.standards.map(std => `• ${std}`).join('\n')}\n\n🔐 Encryption: ${data.security.encryptionEn}\n💾 Backups: ${data.security.backupsEn}\n👁️ Monitoring: ${data.security.monitoringEn}\n⏰ Uptime: ${data.statistics.uptimeEn}\n\n📋 Certifications and Compliance:\n${data.company.certifications.map(cert => `• ${cert}`).join('\n')}\n\n🌟 Secure Technology Partnerships:\n${data.partnerships.technology.map(partner => `• ${partner}`).join('\n')}\n\n🛡️ Your data security isn't just a promise, it's a commitment we live by every day! 💪`;
-    }
-
-    // If no specific match found, return a smart general response instead of null
-    return userLanguage === 'ar'
-      ? `🤔 سؤال مثير للاهتمام! رغم إن مش لقيت إجابة مباشرة في بياناتي، لكن خليني أساعدك:\n\n🚀 إيفا شركة تكنولوجيا شاملة متخصصة في:\n• تطوير التطبيقات والمواقع\n• الذكاء الاصطناعي والتحول الرقمي\n• التدريب والاستشارات التقنية\n• الحلول السحابية والأمان الرقمي\n\n💡 لو سؤالك عن موضوع تقني أو تجاري، أقدر أساعدك بمعلومات عامة مفيدة.\n\nممكن توضحلي أكتر عن اللي محتاجه؟ أو اسأل عن خدماتنا التفصيلية! 🎯`
-      : `🤔 Interesting question! While I didn't find a direct answer in my database, let me help you:\n\n🚀 Eva is a comprehensive technology company specialized in:\n• App and website development\n• AI and digital transformation\n• Technical training and consulting\n• Cloud solutions and digital security\n\n💡 If your question is about technical or business topics, I can help with useful general information.\n\nCould you clarify more about what you need? Or ask about our detailed services! 🎯`;
+  const quickSuggestions = {
+    ar: [
+      'ما هي خدمات شركة إيفا؟',
+      'كيف يمكنني التواصل معكم؟',
+      'أخبرني عن المشاريع الجديدة',
+      'ما هي رؤية الشركة؟'
+    ],
+    en: [
+      'What are Eva Company services?',
+      'How can I contact you?',
+      'Tell me about new projects',
+      'What is the company vision?'
+    ]
   };
 
-  // Enhanced message handling with smart mode
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'k':
+            e.preventDefault();
+            clearChat();
+            break;
+          case 'e':
+            e.preventDefault();
+            exportChat();
+            break;
+          case '/':
+            e.preventDefault();
+            setShowSettings(!showSettings);
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
+  }, [showSettings]);
+
+  // Message interaction functions
+  const copyMessage = async (content: string) => {
+    await navigator.clipboard.writeText(content);
+    toast({
+      title: currentLanguage === 'ar' ? 'تم النسخ' : 'Copied',
+      description: currentLanguage === 'ar' ? 'تم نسخ الرسالة' : 'Message copied to clipboard',
+    });
+  };
+
+  const shareMessage = async (content: string) => {
+    if (navigator.share) {
+      await navigator.share({
+        title: 'Eva Assistant Message',
+        text: content,
+      });
+    } else {
+      copyMessage(content);
+    }
+  };
+
+  const rateMessage = (messageId: string, rating: 'like' | 'dislike') => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId ? { ...msg, rating } : msg
+    ));
+    toast({
+      title: currentLanguage === 'ar' ? 'تم التقييم' : 'Rating saved',
+      description: currentLanguage === 'ar' ? 'شكراً لتقييمك' : 'Thank you for your feedback',
+    });
+  };
+
+  const bookmarkMessage = (messageId: string) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId ? { ...msg, isBookmarked: !msg.isBookmarked } : msg
+    ));
+  };
+
+  const clearChat = () => {
+    if (messages.length > 0) {
+      setSavedChats(prev => [...prev, messages]);
+    }
+    setMessages([]);
+    toast({
+      title: currentLanguage === 'ar' ? 'تم مسح المحادثة' : 'Chat cleared',
+      description: currentLanguage === 'ar' ? 'تم حفظ المحادثة تلقائياً' : 'Chat saved automatically',
+    });
+  };
+
+  const exportChat = () => {
+    const chatData = {
+      timestamp: new Date().toISOString(),
+      language: currentLanguage,
+      mode: chatMode,
+      messages: messages
+    };
+    
+    const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `eva-chat-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const startVoiceRecording = () => {
+    setIsRecording(!isRecording);
+    toast({
+      title: currentLanguage === 'ar' ? 'التسجيل الصوتي' : 'Voice Recording',
+      description: currentLanguage === 'ar' ? 'قريباً جداً!' : 'Coming soon!',
+    });
+  };
+
+  const handleQuickSuggestion = (suggestion: string) => {
+    setInputValue(suggestion);
+    setShowQuickActions(false);
+  };
+
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
-    const detectedLang = detectLanguage(inputValue);
-    const tone = detectTone(inputValue, detectedLang);
-    setDetectedTone(tone);
-    setLanguage(detectedLang);
+    const detectedLanguage = detectLanguage(inputValue);
+    const detectedTone = detectTone(inputValue);
 
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
       isUser: true,
       timestamp: new Date(),
-      language: detectedLang,
-      tone
+      language: detectedLanguage,
+      tone: detectedTone
     };
 
     setMessages(prev => [...prev, userMessage]);
-    const currentQuery = inputValue;
     setInputValue('');
-    setIsLoading(true);
+    setIsTyping(true);
 
-    try {
-      let response: string;
-      let source: 'eva' | 'groq' = 'eva';
-
-      switch (conversationMode) {
-        case 'eva-only':
-          response = searchEvaData(currentQuery, detectedLang);
-          break;
-          
-        case 'ai-only':
-          source = 'groq';
-          const context = groqService.extractContext(currentQuery, EVA_COMPANY_DATA);
-          response = await groqService.generateResponse(currentQuery, detectedLang, tone, context);
-          break;
-          
-        default: // smart mode
-          response = searchEvaData(currentQuery, detectedLang);
-          // Since searchEvaData never returns null now, we have response
-          // But check if it's the generic fallback response, then enhance with Groq
-          if (response.includes('مثير للاهتمام') || response.includes('Interesting question')) {
-            source = 'groq';
-            const context = groqService.extractContext(currentQuery, EVA_COMPANY_DATA);
-            const groqResponse = await groqService.generateResponse(currentQuery, detectedLang, tone, context);
-            // Combine Eva's general info with Groq's specific answer
-            response = groqResponse;
-          }
-      }
-
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response,
-        isUser: false,
-        timestamp: new Date(),
-        language: detectedLang,
-        tone,
-        source
-      };
-
-      setMessages(prev => [...prev, botMessage]);
-    } catch (error) {
-      console.error('Error in handleSendMessage:', error);
-      // Provide intelligent response even if Groq fails
-      const evaResponse = searchEvaData(currentQuery, detectedLang);
-      const smartResponses = CONVERSATION_DATABASE.smartResponses[detectedLang];
-      const randomResponse = smartResponses.general[Math.floor(Math.random() * smartResponses.general.length)];
-      
-      const fallbackResponse = detectedLang === 'ar'
-        ? evaResponse || `${randomResponse}\n\n🤖 ${CONVERSATION_DATABASE.fallbackSystem.ar.beforeAI}\n\nلكن معلومات إيفا الأساسية متوفرة دائماً:\n• خدمة العملاء: 17125\n• الإيميل: info@eva-cosmetics.com\n• المتجر: shop@eva-cosmetics.com\n\n💼 إيه اللي تحب تعرفه عن إيفا؟`
-        : evaResponse || `${randomResponse}\n\n🤖 ${CONVERSATION_DATABASE.fallbackSystem.en.beforeAI}\n\nBut Eva's essential information is always available:\n• Customer Service: 17125\n• Email: info@eva-cosmetics.com\n• Store: shop@eva-cosmetics.com\n\n💼 What would you like to know about Eva?`;
+    setTimeout(async () => {
+      const response = await getResponse(inputValue, detectedLanguage, detectedTone);
       
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: fallbackResponse,
+        content: response.content,
         isUser: false,
         timestamp: new Date(),
-        language: detectedLang,
-        tone,
-        source: 'eva'
+        language: detectedLanguage,
+        tone: detectedTone,
+        source: response.source
       };
 
       setMessages(prev => [...prev, botMessage]);
-    } finally {
-      setIsLoading(false);
+      setIsTyping(false);
+    }, 1500);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
-  // Copy message to clipboard
-  const copyMessage = (content: string) => {
-    navigator.clipboard.writeText(content);
-    toast({
-      title: language === 'ar' ? 'تم النسخ' : 'Copied',
-      description: language === 'ar' ? 'تم نسخ الرسالة' : 'Message copied to clipboard'
-    });
-  };
-
-  // Export conversation
-  const exportConversation = () => {
-    const conversation = messages.map(msg => 
-      `${msg.isUser ? (language === 'ar' ? 'أنت' : 'You') : 'Eva'} (${msg.timestamp.toLocaleString()}): ${msg.content}`
-    ).join('\n\n');
-    
-    const blob = new Blob([conversation], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `eva-conversation-${new Date().getTime()}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: language === 'ar' ? 'تم التصدير' : 'Exported',
-      description: language === 'ar' ? 'تم تصدير المحادثة بنجاح' : 'Conversation exported successfully'
-    });
-  };
-
-  // Clear conversation
-  const clearConversation = () => {
-    setMessages([]);
-    setTimeout(() => {
-      const welcomeMessage: Message = {
-        id: '1',
-        content: language === 'ar' 
-          ? 'تم مسح المحادثة! 🔄 كيف يمكنني مساعدتك اليوم؟'
-          : 'Conversation cleared! 🔄 How can I help you today?',
-        isUser: false,
-        timestamp: new Date(),
-        language,
-        tone: detectedTone,
-        source: 'eva'
-      };
-      setMessages([welcomeMessage]);
-    }, 100);
-  };
-
-  // Speech recognition (placeholder)
-  const toggleSpeechRecognition = () => {
-    setIsListening(!isListening);
-    toast({
-      title: language === 'ar' ? 'التعرف على الصوت' : 'Speech Recognition',
-      description: language === 'ar' ? 'سيتم تفعيل هذه الميزة قريباً' : 'This feature will be activated soon'
-    });
-  };
-
-  // Text to speech (placeholder)
-  const toggleTextToSpeech = () => {
-    setIsSpeaking(!isSpeaking);
-    toast({
-      title: language === 'ar' ? 'التحويل إلى صوت' : 'Text to Speech',
-      description: language === 'ar' ? 'سيتم تفعيل هذه الميزة قريباً' : 'This feature will be activated soon'
-    });
-  };
-
   return (
-    <div className="min-h-screen bg-chat-bg text-text-primary">
+    <div className={`flex flex-col h-screen bg-background ${currentLanguage === 'ar' ? 'rtl' : 'ltr'}`}>
       {/* Header */}
-      <div className="bg-chat-surface border-b border-chat-border p-4 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full overflow-hidden shadow-lg ring-2 ring-eva-primary/30">
-              <img src={evaLogo} alt="Eva Logo" className="w-full h-full object-cover" />
+      <div className="bg-card border-b border-border p-6 shadow-professional">
+        <div className="flex items-center justify-between max-w-5xl mx-auto">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center shadow-professional">
+              <Building2 className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-eva-primary to-eva-secondary bg-clip-text text-transparent">
-                {language === 'ar' ? 'مساعد إيفا الذكي' : 'Eva Smart Assistant'}
+              <h1 className="text-2xl font-bold text-foreground">
+                {currentLanguage === 'ar' ? 'مساعد شركة إيفا' : 'Eva Company Assistant'}
               </h1>
-              <p className="text-sm text-text-secondary">
-                {language === 'ar' ? 'مساعدك الشخصي في شركة إيفا' : 'Your personal assistant at Eva Company'}
+              <p className="text-sm text-muted-foreground font-medium">
+                {currentLanguage === 'ar' ? 'مساعدك المهني للاستفسارات التقنية' : 'Your professional tech consultation assistant'}
               </p>
             </div>
           </div>
-          
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant={detectedTone === 'formal' ? 'default' : 'secondary'} className="animate-pulse">
-              {language === 'ar' 
-                ? (detectedTone === 'formal' ? 'رسمي' : 'ودود') 
-                : (detectedTone === 'formal' ? 'Formal' : 'Friendly')
-              }
-            </Badge>
-            
-            <Select value={conversationMode} onValueChange={(value: 'smart' | 'eva-only' | 'ai-only') => setConversationMode(value)}>
-              <SelectTrigger className="w-32 h-8 text-xs bg-chat-card border-chat-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="smart">{language === 'ar' ? 'ذكي' : 'Smart'}</SelectItem>
-                <SelectItem value="eva-only">{language === 'ar' ? 'إيفا فقط' : 'Eva Only'}</SelectItem>
-                <SelectItem value="ai-only">{language === 'ar' ? 'ذكاء اصطناعي' : 'AI Only'}</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={exportConversation}
-              className="text-text-secondary hover:text-eva-accent transition-colors"
-              title={language === 'ar' ? 'تصدير المحادثة' : 'Export Conversation'}
-            >
-              <Download className="w-4 h-4" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearConversation}
-              className="text-text-secondary hover:text-destructive transition-colors"
-              title={language === 'ar' ? 'مسح المحادثة' : 'Clear Conversation'}
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-              className="text-text-secondary hover:text-eva-accent transition-colors"
-            >
-              <Globe className="w-4 h-4 mr-1" />
-              {language === 'ar' ? 'EN' : 'عر'}
-            </Button>
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Phone className="w-3 h-3" />
+                <span>{EVA_COMPANY_DATA.contact.phone}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Mail className="w-3 h-3" />
+                <span>{EVA_COMPANY_DATA.contact.email}</span>
+              </div>
+            </div>
+            <LanguageToggle currentLanguage={currentLanguage} onLanguageChange={setCurrentLanguage} />
           </div>
         </div>
       </div>
 
-      {/* Chat Messages */}
-      <div className="max-w-4xl mx-auto p-4 h-[calc(100vh-200px)] overflow-y-auto">
-        <div className="space-y-4">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="max-w-4xl mx-auto space-y-4">
+          {messages.length === 0 && (
+            <div className="text-center py-12 animate-fade-in">
+              <div className="w-16 h-16 rounded-full bg-gradient-eva mx-auto mb-4 flex items-center justify-center shadow-glow animate-pulse-eva">
+                <Bot className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-eva-primary mb-2">
+                {currentLanguage === 'ar' ? 'أهلاً بك في مساعد إيفا!' : 'Welcome to Eva Assistant!'}
+              </h2>
+              <p className="text-muted-foreground">
+                {currentLanguage === 'ar' 
+                  ? 'اسألني أي شيء عن شركة إيفا أو أي موضوع آخر' 
+                  : 'Ask me anything about Eva Company or any other topic'}
+              </p>
+            </div>
+          )}
+
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
+              className={cn(
+                "flex gap-3 animate-slide-up",
+                message.isUser ? "justify-end" : "justify-start"
+              )}
             >
-              <Card className={`max-w-[80%] p-4 group hover:shadow-lg transition-all duration-200 ${
-                message.isUser 
-                  ? 'bg-gradient-to-br from-eva-primary to-eva-primary-dark text-white border-eva-primary/20' 
-                  : 'bg-chat-bot border-chat-border hover:border-eva-accent/30'
-              }`}>
-                <div className="flex items-start gap-3">
-                  {!message.isUser && (
-                    <div className="w-6 h-6 bg-gradient-to-br from-eva-primary to-eva-secondary rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <Bot className="w-4 h-4 text-white" />
-                    </div>
-                  )}
-                  {message.isUser && (
-                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <User className="w-4 h-4 text-white" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="whitespace-pre-wrap leading-relaxed break-words">
-                      {message.content}
-                    </p>
-                    <div className="flex items-center justify-between mt-3 text-xs opacity-70">
-                      <div className="flex items-center gap-2">
-                        <span>
-                          {message.timestamp.toLocaleTimeString(
-                            message.language === 'ar' ? 'ar-EG' : 'en-US'
-                          )}
-                        </span>
-                        {message.source && (
-                          <Badge variant="outline" className="text-xs border-current">
-                            {message.source === 'eva' ? 
-                              (language === 'ar' ? 'بيانات إيفا' : 'Eva Data') : 
-                              (language === 'ar' ? 'مساعد ذكي' : 'AI Assistant')
-                            }
-                          </Badge>
+              {!message.isUser && (
+                <div className="w-8 h-8 rounded-full bg-gradient-eva flex items-center justify-center shadow-message">
+                  <Bot className="w-4 h-4 text-white" />
+                </div>
+              )}
+              
+              <div
+                className={cn(
+                  "max-w-md rounded-2xl px-4 py-3 shadow-message group relative",
+                  message.isUser
+                    ? "bg-eva-primary text-white"
+                    : "bg-card border border-border/50"
+                )}
+              >
+                <p className="text-sm leading-relaxed">{message.content}</p>
+                
+                {/* Message Actions */}
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-2 right-2 flex gap-1">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="secondary" size="sm" className="h-6 w-6 p-0">
+                        <MoreHorizontal className="w-3 h-3" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48" align="end">
+                      <div className="space-y-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start"
+                          onClick={() => copyMessage(message.content)}
+                        >
+                          <Copy className="w-3 h-3 mr-2" />
+                          {currentLanguage === 'ar' ? 'نسخ' : 'Copy'}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start"
+                          onClick={() => shareMessage(message.content)}
+                        >
+                          <Share2 className="w-3 h-3 mr-2" />
+                          {currentLanguage === 'ar' ? 'مشاركة' : 'Share'}
+                        </Button>
+                        {!message.isUser && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                              onClick={() => bookmarkMessage(message.id)}
+                            >
+                              <Bookmark className={cn("w-3 h-3 mr-2", message.isBookmarked && "fill-current")} />
+                              {currentLanguage === 'ar' ? 'حفظ' : 'Bookmark'}
+                            </Button>
+                            <Separator />
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn("flex-1", message.rating === 'like' && "bg-green-100")}
+                                onClick={() => rateMessage(message.id, 'like')}
+                              >
+                                <ThumbsUp className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn("flex-1", message.rating === 'dislike' && "bg-red-100")}
+                                onClick={() => rateMessage(message.id, 'dislike')}
+                              >
+                                <ThumbsDown className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </>
                         )}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyMessage(message.content)}
-                        className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 hover:bg-white/10 transition-all"
-                        title={language === 'ar' ? 'نسخ' : 'Copy'}
-                      >
-                        <Copy className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
-              </Card>
+                
+                {!message.isUser && message.source && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant="outline" className="text-xs">
+                      {message.source === 'eva' ? (
+                        <>
+                          <Database className="w-3 h-3 mr-1" />
+                          {currentLanguage === 'ar' ? 'بيانات إيفا' : 'Eva Data'}
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-3 h-3 mr-1" />
+                          {currentLanguage === 'ar' ? 'جروك' : 'Grok'}
+                        </>
+                      )}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      <Globe className="w-3 h-3 mr-1" />
+                      {message.tone === 'friendly' 
+                        ? (currentLanguage === 'ar' ? 'ودود' : 'Friendly')
+                        : (currentLanguage === 'ar' ? 'رسمي' : 'Formal')
+                      }
+                    </Badge>
+                  </div>
+                )}
+              </div>
+              
+              {message.isUser && (
+                <div className="w-8 h-8 rounded-full bg-eva-secondary flex items-center justify-center">
+                  <User className="w-4 h-4 text-eva-primary" />
+                </div>
+              )}
             </div>
           ))}
-          
-          {isLoading && (
-            <div className="flex justify-start">
-              <Card className="bg-chat-bot border-chat-border p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-gradient-to-br from-eva-primary to-eva-secondary rounded-full flex items-center justify-center">
-                    <Bot className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-eva-primary rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-eva-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-eva-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                  </div>
-                  <span className="text-sm text-text-muted">
-                    {language === 'ar' ? 'جارٍ الكتابة...' : 'Typing...'}
-                  </span>
+
+          {isTyping && (
+            <div className="flex gap-3 animate-slide-up">
+              <div className="w-8 h-8 rounded-full bg-gradient-eva flex items-center justify-center shadow-message animate-pulse-eva">
+                <Bot className="w-4 h-4 text-white" />
+              </div>
+              <div className="bg-card border border-border/50 rounded-2xl px-4 py-3 shadow-message">
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 bg-eva-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-eva-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-eva-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                 </div>
-              </Card>
+              </div>
             </div>
           )}
           
@@ -523,66 +559,132 @@ const EvaChatbot: React.FC<ChatbotProps> = ({ apiKey = 'demo-key' }) => {
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="fixed bottom-0 left-0 right-0 bg-chat-surface/95 backdrop-blur-sm border-t border-chat-border p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleSpeechRecognition}
-              className={`text-text-secondary hover:text-eva-accent transition-colors ${isListening ? 'text-eva-accent animate-pulse' : ''}`}
-              title={language === 'ar' ? 'التعرف على الصوت' : 'Speech Recognition'}
-            >
-              {isListening ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-            </Button>
-            
-            <div className="flex-1 relative">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                placeholder={
-                  language === 'ar'
-                    ? 'اكتب رسالتك هنا... مثال: "إيه خدماتكم؟" أو "How much does development cost?"'
-                    : 'Type your message here... Example: "What are your services?" or "كام سعر التطوير؟"'
-                }
-                className="bg-chat-card border-chat-border text-text-primary placeholder:text-text-muted pr-14 pl-4 py-3 rounded-xl focus:ring-2 focus:ring-eva-primary/50 focus:border-eva-primary transition-all"
-                disabled={isLoading}
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={isLoading || !inputValue.trim()}
-                size="sm"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-eva-primary to-eva-secondary hover:from-eva-primary-dark hover:to-eva-primary shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
+      {/* Input */}
+      <div className="bg-card border-t border-border/50 p-4">
+        <div className="max-w-4xl mx-auto space-y-3">
+          {/* Quick Suggestions */}
+          {messages.length === 0 && (
+            <div className="flex flex-wrap gap-2 animate-fade-in">
+              {quickSuggestions[currentLanguage].map((suggestion, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickSuggestion(suggestion)}
+                  className="text-xs"
+                >
+                  {suggestion}
+                </Button>
+              ))}
             </div>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTextToSpeech}
-              className={`text-text-secondary hover:text-eva-accent transition-colors ${isSpeaking ? 'text-eva-accent animate-pulse' : ''}`}
-              title={language === 'ar' ? 'التحويل إلى صوت' : 'Text to Speech'}
-            >
-              {isSpeaking ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </Button>
+          )}
+
+          {/* Chat Controls */}
+          <div className="flex items-center gap-3">
+            <Select value={chatMode} onValueChange={(value: ChatMode) => setChatMode(value)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {chatModes.map((mode) => (
+                  <SelectItem key={mode.id} value={mode.id}>
+                    <div className="flex items-center gap-2">
+                      <mode.icon className="w-4 h-4" />
+                      {mode.name[currentLanguage]}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearChat}
+                disabled={messages.length === 0}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportChat}
+                disabled={messages.length === 0}
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+              <Popover open={showSettings} onOpenChange={setShowSettings}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64" align="end">
+                  <div className="space-y-3">
+                    <h4 className="font-medium">
+                      {currentLanguage === 'ar' ? 'الإعدادات' : 'Settings'}
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">
+                          {currentLanguage === 'ar' ? 'التسجيل الصوتي' : 'Voice Recording'}
+                        </span>
+                        <Button
+                          variant={voiceEnabled ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setVoiceEnabled(!voiceEnabled)}
+                        >
+                          {voiceEnabled ? currentLanguage === 'ar' ? 'مفعل' : 'On' : currentLanguage === 'ar' ? 'معطل' : 'Off'}
+                        </Button>
+                      </div>
+                    </div>
+                    <Separator />
+                    <div className="text-xs text-muted-foreground">
+                      <p>{currentLanguage === 'ar' ? 'اختصارات لوحة المفاتيح:' : 'Keyboard shortcuts:'}</p>
+                      <p>Ctrl+K: {currentLanguage === 'ar' ? 'مسح المحادثة' : 'Clear chat'}</p>
+                      <p>Ctrl+E: {currentLanguage === 'ar' ? 'تصدير المحادثة' : 'Export chat'}</p>
+                      <p>Ctrl+/: {currentLanguage === 'ar' ? 'الإعدادات' : 'Settings'}</p>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
-          
-          <div className="text-center mt-3">
-            <p className="text-xs text-text-muted">
-              {language === 'ar'
-                ? '🤖 مدعوم بالذكاء الاصطناعي من إيفا • يدعم العربية والإنجليزية • ذكي في اكتشاف نبرة المحادثة'
-                : '🤖 Powered by Eva AI • Supports Arabic & English • Smart tone detection'
-              }
-            </p>
+
+          {/* Input Row */}
+          <div className="flex gap-3">
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={currentLanguage === 'ar' ? 'اكتب رسالتك هنا...' : 'Type your message here...'}
+              className="flex-1 text-base"
+              disabled={isTyping}
+            />
+            {voiceEnabled && (
+              <Button
+                variant="outline"
+                onClick={startVoiceRecording}
+                disabled={isTyping}
+                className={cn(
+                  "transition-all duration-300",
+                  isRecording && "bg-red-500 text-white animate-pulse"
+                )}
+              >
+                {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </Button>
+            )}
+            <Button
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim() || isTyping}
+              className="px-6 bg-gradient-eva hover:shadow-glow transition-all duration-300"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
     </div>
   );
 };
-
-export default EvaChatbot;
