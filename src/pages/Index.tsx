@@ -1,4 +1,4 @@
-import { ChatBot } from '@/components/ChatBot';
+import ChatBot from '@/components/ChatBot';
 
 const Index = () => {
   return <ChatBot />;
