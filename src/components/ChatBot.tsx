@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Globe, Zap, Database, Copy, Share2, ThumbsUp, ThumbsDown, Bookmark, Trash2, Download, Mic, MicOff, Settings, MoreHorizontal, Lightbulb, Brain, BarChart3 } from 'lucide-react';
+import { Send, Bot, User, Globe, Zap, Database, Copy, Share2, ThumbsUp, ThumbsDown, Bookmark, Trash2, Download, Mic, MicOff, Settings, MoreHorizontal, Lightbulb, Brain, BarChart3, Building2, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { EVA_COMPANY_DATA, SMART_RESPONSES } from '@/data/evaData';
 
 interface Message {
   id: string;
@@ -66,55 +67,111 @@ const detectLanguage = (text: string): 'ar' | 'en' => {
 };
 
 const getResponse = async (message: string, language: 'ar' | 'en', tone: 'formal' | 'friendly'): Promise<{ content: string; source: 'eva' | 'grok' }> => {
-  // Mock Eva Data responses
-  const evaData = {
-    ar: {
-      friendly: {
-        'شركة': 'إيفا شركة رائعة بتشتغل في مجال التكنولوجيا! 😊 نحن متخصصون في الحلول الذكية',
-        'خدمات': 'عندنا خدمات كتيرة زي تطوير البرمجيات والاستشارات التقنية',
-        'مساعدة': 'أكيد يا صديقي! أنا هنا عشان أساعدك في أي حاجة تخص إيفا 🤝'
-      },
-      formal: {
-        'شركة': 'شركة إيفا متخصصة في تقديم الحلول التقنية المتقدمة لعملائها الكرام',
-        'خدمات': 'تقدم الشركة مجموعة شاملة من الخدمات التقنية والاستشارية',
-        'مساعدة': 'نحن في خدمتكم لتقديم المساعدة المطلوبة بخصوص خدمات الشركة'
-      }
-    },
-    en: {
-      friendly: {
-        'company': 'Eva is an awesome tech company! 😊 We specialize in smart solutions',
-        'services': 'We offer lots of services like software development and tech consulting',
-        'help': 'Sure buddy! I\'m here to help you with anything Eva-related 🤝'
-      },
-      formal: {
-        'company': 'Eva Company specializes in providing advanced technological solutions',
-        'services': 'The company offers a comprehensive range of technical and consulting services',
-        'help': 'We are at your service to provide the required assistance regarding our services'
-      }
-    }
-  };
-
-  // Check Eva data first
-  const dataSet = evaData[language][tone];
-  for (const [key, response] of Object.entries(dataSet)) {
-    if (message.toLowerCase().includes(key)) {
-      return { content: response, source: 'eva' };
+  const lowerMessage = message.toLowerCase();
+  
+  // Check for company information
+  if (lowerMessage.includes('شركة') || lowerMessage.includes('company') || lowerMessage.includes('إيفا') || lowerMessage.includes('eva')) {
+    const info = EVA_COMPANY_DATA.company;
+    if (language === 'ar') {
+      return {
+        content: tone === 'friendly' 
+          ? `إيفا شركة رائعة! 😊 تأسست في ${info.established} وبقالها خبرة كبيرة في ${info.industry}. عندنا ${info.employees} موظف ومقرنا الرئيسي في ${info.headquarters}. رؤيتنا هي: ${info.vision}`
+          : `شركة إيفا تأسست عام ${info.established} وتعمل في مجال ${info.industry}. لدينا ${info.employees} موظف مع مقر رئيسي في ${info.headquarters}. رؤية الشركة: ${info.vision}`,
+        source: 'eva'
+      };
+    } else {
+      return {
+        content: tone === 'friendly'
+          ? `Eva is an amazing company! 😊 Founded in ${info.established}, we've got great experience in ${info.industry}. We have ${info.employees} employees with headquarters in ${info.headquartersEn}. Our vision: ${info.visionEn}`
+          : `Eva Company was established in ${info.established} and operates in ${info.industry}. We have ${info.employees} employees with headquarters in ${info.headquartersEn}. Company vision: ${info.visionEn}`,
+        source: 'eva'
+      };
     }
   }
 
-  // Fallback to mock Grok response
-  const grokResponses = {
+  // Check for services
+  if (lowerMessage.includes('خدمات') || lowerMessage.includes('services') || lowerMessage.includes('تطوير') || lowerMessage.includes('development')) {
+    const services = EVA_COMPANY_DATA.services;
+    if (language === 'ar') {
+      return {
+        content: tone === 'friendly'
+          ? `عندنا خدمات كتير حلوة! 😊 زي ${services.softwareDevelopment.name} (${services.softwareDevelopment.pricing})، ${services.digitalTransformation.name}، ${services.cloudSolutions.name}، و ${services.ecommerce.name}. كلها بأحدث التقنيات!`
+          : `تقدم شركة إيفا خدمات متنوعة تشمل: ${services.softwareDevelopment.name} بسعر ${services.softwareDevelopment.pricing}، ${services.digitalTransformation.name}، ${services.cloudSolutions.name}، و ${services.ecommerce.name}.`,
+        source: 'eva'
+      };
+    } else {
+      return {
+        content: tone === 'friendly'
+          ? `We have amazing services! 😊 Like ${services.softwareDevelopment.nameEn} (${services.softwareDevelopment.pricingEn}), ${services.digitalTransformation.nameEn}, ${services.cloudSolutions.nameEn}, and ${services.ecommerce.nameEn}. All with latest tech!`
+          : `Eva Company offers diverse services including: ${services.softwareDevelopment.nameEn} starting at ${services.softwareDevelopment.pricingEn}, ${services.digitalTransformation.nameEn}, ${services.cloudSolutions.nameEn}, and ${services.ecommerce.nameEn}.`,
+        source: 'eva'
+      };
+    }
+  }
+
+  // Check for contact information
+  if (lowerMessage.includes('تواصل') || lowerMessage.includes('contact') || lowerMessage.includes('اتصال') || lowerMessage.includes('phone') || lowerMessage.includes('email')) {
+    const contact = EVA_COMPANY_DATA.contact;
+    if (language === 'ar') {
+      return {
+        content: tone === 'friendly'
+          ? `أكيد! تقدر تتواصل معانا بسهولة 😊\n📞 ${contact.phone}\n📧 ${contact.email}\n🌐 ${contact.website}\n📍 ${contact.address}\n⏰ ساعات العمل: ${contact.workingHours}`
+          : `معلومات التواصل مع شركة إيفا:\nالهاتف: ${contact.phone}\nالبريد الإلكتروني: ${contact.email}\nالموقع: ${contact.website}\nالعنوان: ${contact.address}\nساعات العمل: ${contact.workingHours}`,
+        source: 'eva'
+      };
+    } else {
+      return {
+        content: tone === 'friendly'
+          ? `Sure! You can easily reach us 😊\n📞 ${contact.phone}\n📧 ${contact.email}\n🌐 ${contact.website}\n📍 ${contact.addressEn}\n⏰ Working hours: ${contact.workingHoursEn}`
+          : `Eva Company contact information:\nPhone: ${contact.phone}\nEmail: ${contact.email}\nWebsite: ${contact.website}\nAddress: ${contact.addressEn}\nWorking hours: ${contact.workingHoursEn}`,
+        source: 'eva'
+      };
+    }
+  }
+
+  // Check for statistics
+  if (lowerMessage.includes('إحصائيات') || lowerMessage.includes('statistics') || lowerMessage.includes('أرقام') || lowerMessage.includes('نجاح')) {
+    const stats = EVA_COMPANY_DATA.statistics;
+    if (language === 'ar') {
+      return {
+        content: tone === 'friendly'
+          ? `أرقامنا جامدة جداً! 🚀\n✅ ${stats.projectsCompleted}\n📈 ${stats.successRate}\n😊 ${stats.clientSatisfaction}\n⚡ وقت الاستجابة: ${stats.responseTime}\n🔄 ${stats.uptime}`
+          : `إحصائيات شركة إيفا:\nالمشاريع المكتملة: ${stats.projectsCompleted}\nمعدل النجاح: ${stats.successRate}\nرضا العملاء: ${stats.clientSatisfaction}\nوقت الاستجابة: ${stats.responseTime}\nوقت التشغيل: ${stats.uptime}`,
+        source: 'eva'
+      };
+    } else {
+      return {
+        content: tone === 'friendly'
+          ? `Our numbers are amazing! 🚀\n✅ ${stats.projectsCompletedEn}\n📈 ${stats.successRateEn}\n😊 ${stats.clientSatisfactionEn}\n⚡ Response time: ${stats.responseTimeEn}\n🔄 ${stats.uptimeEn}`
+          : `Eva Company statistics:\nCompleted projects: ${stats.projectsCompletedEn}\nSuccess rate: ${stats.successRateEn}\nClient satisfaction: ${stats.clientSatisfactionEn}\nResponse time: ${stats.responseTimeEn}\nUptime: ${stats.uptimeEn}`,
+        source: 'eva'
+      };
+    }
+  }
+
+  // Use smart responses for general queries
+  const responses = SMART_RESPONSES[language];
+  if (lowerMessage.includes('مرحبا') || lowerMessage.includes('أهلا') || lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+    const greetings = responses.generalGreeting;
+    return {
+      content: greetings[Math.floor(Math.random() * greetings.length)],
+      source: 'eva'
+    };
+  }
+
+  // Default fallback
+  const fallbackResponses = {
     ar: {
-      friendly: 'معلش، مش لاقي المعلومة دي في بيانات إيفا، بس حسب معرفتي العامة...',
-      formal: 'نعتذر، لم نجد هذه المعلومة في قاعدة بيانات إيفا، ولكن وفقاً للمعرفة العامة...'
+      friendly: 'معلش، مش لاقي المعلومة دي في بيانات إيفا بالتفصيل، بس حسب معرفتي العامة... 🤔',
+      formal: 'نعتذر، لم نجد هذه المعلومة في قاعدة بيانات إيفا المباشرة، ولكن وفقاً للمعرفة العامة...'
     },
     en: {
-      friendly: 'Sorry, couldn\'t find that in Eva\'s data, but based on my general knowledge...',
-      formal: 'We apologize, this information was not found in Eva\'s database, however based on general knowledge...'
+      friendly: 'Sorry, couldn\'t find that specific info in Eva\'s database, but based on my general knowledge... 🤔',
+      formal: 'We apologize, this specific information was not found in Eva\'s direct database, however based on general knowledge...'
     }
   };
 
-  return { content: grokResponses[language][tone], source: 'grok' };
+  return { content: fallbackResponses[language][tone], source: 'grok' };
 };
 
 export const ChatBot = () => {
@@ -308,24 +365,36 @@ export const ChatBot = () => {
   };
 
   return (
-    <div className={`flex flex-col h-screen bg-gradient-to-br from-background via-background to-eva-primary/10 ${currentLanguage === 'ar' ? 'rtl' : 'ltr'}`}>
+    <div className={`flex flex-col h-screen bg-background ${currentLanguage === 'ar' ? 'rtl' : 'ltr'}`}>
       {/* Header */}
-      <div className="bg-card border-b border-border/50 p-4 shadow-eva">
-        <div className="flex items-center justify-between max-w-4xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-eva flex items-center justify-center shadow-glow">
-              <Bot className="w-6 h-6 text-white" />
+      <div className="bg-card border-b border-border p-6 shadow-professional">
+        <div className="flex items-center justify-between max-w-5xl mx-auto">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center shadow-professional">
+              <Building2 className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-eva-primary">
-                {currentLanguage === 'ar' ? 'مساعد إيفا الذكي' : 'Eva Smart Assistant'}
+              <h1 className="text-2xl font-bold text-foreground">
+                {currentLanguage === 'ar' ? 'مساعد شركة إيفا' : 'Eva Company Assistant'}
               </h1>
-              <p className="text-sm text-muted-foreground">
-                {currentLanguage === 'ar' ? 'مساعدك الودود للمعلومات' : 'Your friendly info companion'}
+              <p className="text-sm text-muted-foreground font-medium">
+                {currentLanguage === 'ar' ? 'مساعدك المهني للاستفسارات التقنية' : 'Your professional tech consultation assistant'}
               </p>
             </div>
           </div>
-          <LanguageToggle currentLanguage={currentLanguage} onLanguageChange={setCurrentLanguage} />
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Phone className="w-3 h-3" />
+                <span>{EVA_COMPANY_DATA.contact.phone}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Mail className="w-3 h-3" />
+                <span>{EVA_COMPANY_DATA.contact.email}</span>
+              </div>
+            </div>
+            <LanguageToggle currentLanguage={currentLanguage} onLanguageChange={setCurrentLanguage} />
+          </div>
         </div>
       </div>
 
