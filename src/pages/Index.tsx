@@ -1,7 +1,7 @@
-import { ChatBot } from '@/components/ChatBot';
+import EvaChatbot from '@/components/ChatBot';
 
 const Index = () => {
-  return <ChatBot />;
+  return <EvaChatbot />;
 };
 
 export default Index;
