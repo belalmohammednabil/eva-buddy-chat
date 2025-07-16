@@ -92,8 +92,8 @@ const searchEvaData = (query: string, userLanguage: 'ar' | 'en'): string | null 
       lowerQuery.includes('address') || lowerQuery.includes('عنوان') || lowerQuery.includes('location') ||
       lowerQuery.includes('موقع') || lowerQuery.includes('اتصال') || lowerQuery.includes('call')) {
     return userLanguage === 'ar'
-      ? `📞 معلومات التواصل:\n📱 ${data.contact.phone}\n📧 ${data.contact.email}\n📍 123 شارع التحرير، القاهرة\n🕒 الأحد-الخميس: 9ص-6م\n💼 المبيعات: ${data.contact.salesEmail}`
-      : `📞 Contact info:\n📱 ${data.contact.phone}\n📧 ${data.contact.email}\n📍 123 Tahrir Street, Cairo\n🕒 Sun-Thu: 9AM-6PM\n💼 Sales: ${data.contact.salesEmail}`;
+      ? `📞 معلومات التواصل:\n🏥 إيفا فارما: ${data.contact.evaPharma.phone}\n💻 إيفا تك: ${data.contact.evaTech.phone}\n📧 إيميل فارما: ${data.contact.evaPharma.email}\n📧 إيميل تك: ${data.contact.evaTech.email}\n🕒 ساعات العمل: السبت-الخميس 8:30ص-5:30م`
+      : `📞 Contact info:\n🏥 Eva Pharma: ${data.contact.evaPharma.phone}\n💻 Eva Tech: ${data.contact.evaTech.phone}\n📧 Pharma email: ${data.contact.evaPharma.email}\n📧 Tech email: ${data.contact.evaTech.email}\n🕒 Working hours: Sat-Thu 8:30AM-5:30PM`;
   }
 
   // Pricing - concise
@@ -112,8 +112,8 @@ const searchEvaData = (query: string, userLanguage: 'ar' | 'en'): string | null 
       lowerQuery.includes('وظيفة') || lowerQuery.includes('وظائف') || lowerQuery.includes('job') ||
       lowerQuery.includes('work') || lowerQuery.includes('شغل') || lowerQuery.includes('hiring')) {
     return userLanguage === 'ar'
-      ? `👥 فريق إيفا:\n👨‍💻 50+ مطور\n🎨 15+ مصمم\n📈 20+ متخصص تسويق\n\n💼 وظائف متاحة:\n• مطور Full Stack (القاهرة)\n• مهندس AI (عن بُعد)\n\nابعت CV: ${data.contact.email}`
-      : `👥 Eva team:\n👨‍💻 50+ developers\n🎨 15+ designers\n📈 20+ marketing specialists\n\n💼 Open positions:\n• Full Stack Developer (Cairo)\n• AI Engineer (Remote)\n\nSend CV: ${data.contact.email}`;
+      ? `👥 فريق إيفا:\n👨‍💻 50+ مطور\n🎨 15+ مصمم\n📈 20+ متخصص تسويق\n\n💼 وظائف متاحة:\n• مطور Full Stack (القاهرة)\n• مهندس AI (عن بُعد)\n\nابعت CV: ${data.contact.evaTech.email}`
+      : `👥 Eva team:\n👨‍💻 50+ developers\n🎨 15+ designers\n📈 20+ marketing specialists\n\n💼 Open positions:\n• Full Stack Developer (Cairo)\n• AI Engineer (Remote)\n\nSend CV: ${data.contact.evaTech.email}`;
   }
 
   // Training - concise
@@ -121,8 +121,8 @@ const searchEvaData = (query: string, userLanguage: 'ar' | 'en'): string | null 
       lowerQuery.includes('دورة') || lowerQuery.includes('دورات') || lowerQuery.includes('learning') ||
       lowerQuery.includes('تعلم') || lowerQuery.includes('education') || lowerQuery.includes('تعليم')) {
     return userLanguage === 'ar'
-      ? `🎓 دوراتنا التدريبية:\n• تطوير الويب: 3 شهور - 5,000 ج.م\n• الذكاء الاصطناعي: 4 شهور - 8,000 ج.م\n🏆 شهادات معتمدة مع ضمان التوظيف\n📝 التسجيل: ${data.contact.email}`
-      : `🎓 Our training courses:\n• Web Development: 3 months - 5,000 EGP\n• AI Course: 4 months - 8,000 EGP\n🏆 Certified with job guarantee\n📝 Registration: ${data.contact.email}`;
+      ? `🎓 دوراتنا التدريبية:\n• تطوير الويب: 3 شهور - 5,000 ج.م\n• الذكاء الاصطناعي: 4 شهور - 8,000 ج.م\n🏆 شهادات معتمدة مع ضمان التوظيف\n📝 التسجيل: ${data.contact.evaTech.email}`
+      : `🎓 Our training courses:\n• Web Development: 3 months - 5,000 EGP\n• AI Course: 4 months - 8,000 EGP\n🏆 Certified with job guarantee\n📝 Registration: ${data.contact.evaTech.email}`;
   }
 
   // Technologies - concise

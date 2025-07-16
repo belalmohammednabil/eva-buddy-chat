@@ -1,9 +1,53 @@
-// Eva Company Comprehensive Data - Enhanced Version
+// Eva Companies Comprehensive Data - Enhanced Version
 export const EVA_COMPANY_DATA = {
-  // Company Information
+  // Eva Pharma Information
+  evaPharma: {
+    name: "إيفا فارما",
+    nameEn: "Eva Pharma",
+    established: "2017",
+    founder: "د. منير رياض أرمانيوس",
+    founderEn: "Dr. Monir Riyadh Armanious",
+    heritage: "تأسست على إرث عائلي يعود لعام 1917",
+    heritageEn: "Founded on family legacy dating back to 1917",
+    industry: "الصناعات الدوائية والتجميل",
+    industryEn: "Pharmaceutical & Cosmetics",
+    headquarters: "الإسكندرية، مصر",
+    headquartersEn: "Alexandria, Egypt",
+    factories: ["الإسكندرية", "القاهرة", "دمياط"],
+    factoriesEn: ["Alexandria", "Cairo", "Damietta"],
+    employees: "2000+",
+    markets: "25+ دولة",
+    marketsEn: "25+ countries",
+    certifications: ["FDA", "EMA", "WHO-GMP", "ISO 14001", "ISO 45001"],
+    awards: ["أفضل شركة أدوية 2023", "جائزة التميز في الجودة 2022"],
+    awardsEn: ["Best Pharmaceutical Company 2023", "Quality Excellence Award 2022"],
+    mission: "تقديم منتجات دوائية وتجميلية عالية الجودة لتحسين حياة الناس",
+    missionEn: "Providing high-quality pharmaceutical and cosmetic products to improve people's lives"
+  },
+
+  // Eva Cosmetics Information  
+  evaCosmetics: {
+    name: "إيفا كوزمتيكس",
+    nameEn: "Eva Cosmetics",
+    parentCompany: "إيفا فارما",
+    parentCompanyEn: "Eva Pharma",
+    established: "2019",
+    industry: "مستحضرات التجميل والعناية الشخصية",
+    industryEn: "Cosmetics & Personal Care",
+    specialization: "منتجات العناية بالشعر والبشرة",
+    specializationEn: "Hair and skin care products",
+    philosophy: "الجمال الطبيعي المدعوم بالعلم",
+    philosophyEn: "Natural beauty backed by science",
+    targetMarket: "المرأة العربية والشرق أوسطية",
+    targetMarketEn: "Arab and Middle Eastern women",
+    distribution: "صيدليات ومتاجر التجميل",
+    distributionEn: "Pharmacies and beauty stores"
+  },
+
+  // Technology Division
   company: {
-    name: "شركة إيفا",
-    nameEn: "Eva Company", 
+    name: "إيفا تك",
+    nameEn: "Eva Tech", 
     established: "2020",
     industry: "Technology & Innovation",
     headquarters: "القاهرة، مصر",
@@ -124,7 +168,96 @@ export const EVA_COMPANY_DATA = {
     ]
   },
 
-  // Products
+  // Eva Pharma Products
+  pharmaProducts: {
+    medications: {
+      categories: ["أدوية القلب والأوعية الدموية", "أدوية الجهاز الهضمي", "أدوية الجهاز التنفسي", "المضادات الحيوية", "أدوية الأطفال"],
+      categoriesEn: ["Cardiovascular", "Gastrointestinal", "Respiratory", "Antibiotics", "Pediatrics"],
+      keyProducts: [
+        {
+          name: "كونكور",
+          nameEn: "Concor",
+          category: "أدوية القلب",
+          categoryEn: "Cardiovascular"
+        },
+        {
+          name: "نيكسيوم",
+          nameEn: "Nexium", 
+          category: "أدوية الجهاز الهضمي",
+          categoryEn: "Gastrointestinal"
+        }
+      ]
+    },
+    qualityStandards: ["FDA المعتمد", "الوكالة الأوروبية للأدوية", "منظمة الصحة العالمية"],
+    qualityStandardsEn: ["FDA Approved", "European Medicines Agency", "WHO Standards"]
+  },
+
+  // Eva Cosmetics Products
+  cosmeticsProducts: {
+    hairCare: {
+      name: "العناية بالشعر",
+      nameEn: "Hair Care",
+      products: [
+        {
+          name: "شامبو ألو إيفا",
+          nameEn: "Aloe Eva Shampoo",
+          description: "شامبو طبيعي بخلاصة الألوة فيرا",
+          descriptionEn: "Natural shampoo with aloe vera extract",
+          benefits: ["ترطيب الشعر", "منع التساقط", "لمعان طبيعي"],
+          benefitsEn: ["Hair moisturizing", "Prevents hair fall", "Natural shine"]
+        },
+        {
+          name: "إيفا هير كلينك",
+          nameEn: "Eva Hair Clinic",
+          description: "علاج متقدم لمشاكل الشعر",
+          descriptionEn: "Advanced treatment for hair problems",
+          types: ["للشعر الجاف", "للشعر الدهني", "ضد التساقط"],
+          typesEn: ["For dry hair", "For oily hair", "Anti-hair fall"]
+        }
+      ]
+    },
+    skinCare: {
+      name: "العناية بالبشرة",
+      nameEn: "Skin Care",
+      products: [
+        {
+          name: "كريم إيفا الليلي",
+          nameEn: "Eva Night Cream",
+          description: "كريم مرطب للاستخدام الليلي",
+          descriptionEn: "Moisturizing cream for night use"
+        },
+        {
+          name: "واقي الشمس إيفا",
+          nameEn: "Eva Sunscreen",
+          spf: "SPF 50+",
+          description: "حماية فائقة من أشعة الشمس",
+          descriptionEn: "Superior sun protection"
+        }
+      ]
+    },
+    oralCare: {
+      name: "العناية بالفم",
+      nameEn: "Oral Care", 
+      products: [
+        {
+          name: "معجون E-Line",
+          nameEn: "E-Line Toothpaste",
+          variants: ["بالنعناع", "بالفراولة للأطفال", "للأسنان الحساسة"],
+          variantsEn: ["Mint", "Strawberry for kids", "For sensitive teeth"]
+        }
+      ]
+    },
+    warimi: {
+      name: "واريمي",
+      nameEn: "Warimi",
+      description: "خط منتجات العناية الطبيعية",
+      descriptionEn: "Natural care product line",
+      philosophy: "الجمال الطبيعي 100%",
+      philosophyEn: "100% Natural Beauty"
+    }
+  },
+
+  // Tech Products
   products: {
     evaAnalytics: {
       name: "إيفا أناليتكس",
@@ -143,17 +276,44 @@ export const EVA_COMPANY_DATA = {
     }
   },
 
-  // Contact & Support
+  // Contact & Support - All Eva Companies
   contact: {
-    phone: "+20 2 1234567890",
-    email: "info@evacompany.com",
-    website: "www.evacompany.com",
-    address: "123 شارع التحرير، القاهرة، مصر",
-    addressEn: "123 Tahrir Street, Cairo, Egypt",
-    workingHours: "الأحد - الخميس: 9 صباحاً - 6 مساءً",
-    workingHoursEn: "Sunday - Thursday: 9 AM - 6 PM",
-    supportEmail: "support@evacompany.com",
-    salesEmail: "sales@evacompany.com"
+    evaPharma: {
+      phone: "17125",
+      tollFree: "19199",
+      email: "info@eva-pharma.com",
+      website: "www.eva-pharma.com",
+      address: "المنطقة الصناعية، الإسكندرية، مصر",
+      addressEn: "Industrial Zone, Alexandria, Egypt",
+      workingHours: "السبت - الخميس: 8:30 صباحاً - 5:30 مساءً",
+      workingHoursEn: "Saturday - Thursday: 8:30 AM - 5:30 PM",
+      customerService: "customerservice@eva-pharma.com",
+      medicalInquiries: "medical@eva-pharma.com"
+    },
+    evaCosmetics: {
+      phone: "17125",
+      email: "info@eva-cosmetics.com",
+      website: "www.eva-cosmetics.com",
+      socialMedia: {
+        facebook: "@EvaCosmetics",
+        instagram: "@eva_cosmetics_official",
+        youtube: "Eva Cosmetics"
+      },
+      storeLocator: "متوفر في جميع الصيدليات الكبرى",
+      storeLocatorEn: "Available in all major pharmacies",
+      beautyConsultation: "beauty@eva-cosmetics.com"
+    },
+    evaTech: {
+      phone: "+20 2 1234567890",
+      email: "info@evacompany.com",
+      website: "www.evacompany.com",
+      address: "123 شارع التحرير، القاهرة، مصر",
+      addressEn: "123 Tahrir Street, Cairo, Egypt",
+      workingHours: "الأحد - الخميس: 9 صباحاً - 6 مساءً",
+      workingHoursEn: "Sunday - Thursday: 9 AM - 6 PM",
+      supportEmail: "support@evacompany.com",
+      salesEmail: "sales@evacompany.com"
+    }
   },
 
   // Process & Methodology
@@ -331,65 +491,58 @@ export const EVA_COMPANY_DATA = {
   }
 };
 
-// المحادثات المرجعية الشاملة
+// المحادثات المرجعية الشاملة - جميع شركات إيفا
 export const CONVERSATION_DATABASE = {
   conversations: [
     // Arabic greetings and general
     { id: 1, userQuery: "ازيك", botResponse: "أهلاً! 🌟 عامل إيه؟ محتاج مساعدة في إيه؟", category: "greeting", language: "ar", tone: "informal" },
     { id: 2, userQuery: "السلام عليكم", botResponse: "وعليكم السلام ورحمة الله! أهلاً بيك 🤝", category: "greeting", language: "ar", tone: "formal" },
     { id: 3, userQuery: "صباح الخير", botResponse: "صباح النور! 🌅 نورت إيفا النهاردة", category: "greeting", language: "ar", tone: "formal" },
-    { id: 4, userQuery: "مساء الخير", botResponse: "مساء النور! 🌙 إزاي يمكن أساعدك؟", category: "greeting", language: "ar", tone: "formal" },
     
-    // English greetings
-    { id: 5, userQuery: "hello", botResponse: "Hello there! 👋 How can Eva help you today?", category: "greeting", language: "en", tone: "informal" },
-    { id: 6, userQuery: "good morning", botResponse: "Good morning! ☀️ Welcome to Eva!", category: "greeting", language: "en", tone: "formal" },
-    { id: 7, userQuery: "hi", botResponse: "Hi! 😊 What would you like to know about Eva?", category: "greeting", language: "en", tone: "informal" },
+    // Eva Pharma specific
+    { id: 4, userQuery: "إيفا فارما", botResponse: "إيفا فارما شركة أدوية رائدة 💊 تأسست 2017 بواسطة د. منير أرمانيوس على إرث عائلي من 1917", category: "company", language: "ar", tone: "informal" },
+    { id: 5, userQuery: "eva pharma", botResponse: "Eva Pharma is a leading pharmaceutical company 💊 founded in 2017 by Dr. Monir Armanious", category: "company", language: "en", tone: "informal" },
+    { id: 6, userQuery: "أدوية إيفا", botResponse: "🏥 منتجاتنا: أدوية القلب، الجهاز الهضمي، التنفسي، مضادات حيوية، وأدوية الأطفال - معتمدة من FDA", category: "products", language: "ar", tone: "informal" },
+    { id: 7, userQuery: "منير أرمانيوس", botResponse: "د. منير رياض أرمانيوس مؤسس إيفا فارما 👨‍⚕️ بنى الشركة على إرث عائلي عريق يعود لـ 1917", category: "founder", language: "ar", tone: "formal" },
     
-    // Company info
-    { id: 8, userQuery: "إيه هي إيفا", botResponse: "إيفا شركة تكنولوجيا رائدة 🚀 متخصصة في التطوير والذكاء الاصطناعي", category: "company", language: "ar", tone: "informal" },
-    { id: 9, userQuery: "what is eva", botResponse: "Eva is a leading tech company 🚀 specialized in development and AI", category: "company", language: "en", tone: "informal" },
-    { id: 10, userQuery: "متى تأسست إيفا", botResponse: "تأسست إيفا سنة 2020 📅 وبقالنا 4 سنين نقدم حلول تقنية مبتكرة", category: "company", language: "ar", tone: "informal" },
+    // Eva Cosmetics specific
+    { id: 8, userQuery: "إيفا كوزمتيكس", botResponse: "إيفا كوزمتيكس للعناية والجمال 💄 متخصصين في منتجات الشعر والبشرة الطبيعية", category: "cosmetics", language: "ar", tone: "informal" },
+    { id: 9, userQuery: "eva cosmetics", botResponse: "Eva Cosmetics for beauty & care 💄 specializing in natural hair and skin products", category: "cosmetics", language: "en", tone: "informal" },
+    { id: 10, userQuery: "ألو إيفا", botResponse: "شامبو ألو إيفا 🌿 بخلاصة الألوة فيرا الطبيعية - للترطيب ومنع التساقط ولمعان طبيعي", category: "products", language: "ar", tone: "informal" },
+    { id: 11, userQuery: "aloe eva", botResponse: "Aloe Eva Shampoo 🌿 with natural aloe vera extract - for moisturizing and natural shine", category: "products", language: "en", tone: "informal" },
+    { id: 12, userQuery: "إيفا هير كلينك", botResponse: "إيفا هير كلينك 💇‍♀️ علاج متقدم لمشاكل الشعر - للجاف والدهني ومضاد التساقط", category: "products", language: "ar", tone: "informal" },
+    { id: 13, userQuery: "واريمي", botResponse: "واريمي خط العناية الطبيعية 🌺 منتجات جمال طبيعية 100% من إيفا كوزمتيكس", category: "products", language: "ar", tone: "informal" },
+    { id: 14, userQuery: "warimi", botResponse: "Warimi natural care line 🌺 100% natural beauty products from Eva Cosmetics", category: "products", language: "en", tone: "informal" },
+    { id: 15, userQuery: "معجون E-Line", botResponse: "معجون E-Line للأسنان 🦷 متوفر بالنعناع وبالفراولة للأطفال وللأسنان الحساسة", category: "products", language: "ar", tone: "informal" },
     
-    // Services
-    { id: 11, userQuery: "إيه خدماتكم", botResponse: "🔧 خدماتنا: تطوير المواقع والتطبيقات، الذكاء الاصطناعي، التحول الرقمي، والحلول السحابية", category: "services", language: "ar", tone: "informal" },
-    { id: 12, userQuery: "your services", botResponse: "🔧 Our services: Web & mobile development, AI solutions, digital transformation, cloud services", category: "services", language: "en", tone: "informal" },
-    { id: 13, userQuery: "تطوير تطبيقات", botResponse: "نطور تطبيقات موبايل وويب باحترافية عالية 📱💻 بأحدث التقنيات", category: "services", language: "ar", tone: "informal" },
+    // Contact - Eva Pharma/Cosmetics
+    { id: 16, userQuery: "رقم إيفا", botResponse: "📞 خدمة العملاء: 17125\n📞 المجاني: 19199\n📧 إيميل: info@eva-pharma.com", category: "contact", language: "ar", tone: "formal" },
+    { id: 17, userQuery: "17125", botResponse: "ده رقم خدمة عملاء إيفا فارما وإيفا كوزمتيكس 📞 متاحين السبت-الخميس 8:30ص-5:30م", category: "contact", language: "ar", tone: "informal" },
+    { id: 18, userQuery: "صيدليات إيفا", botResponse: "منتجات إيفا متوفرة في جميع الصيدليات الكبرى 🏪 سلاسل صيدليات العزبي والدوائية وسيف", category: "availability", language: "ar", tone: "informal" },
     
-    // Pricing
-    { id: 14, userQuery: "كام السعر", botResponse: "💰 الأسعار تبدأ من 30,000 جنيه للتطبيقات البسيطة حسب التعقيد والمميزات", category: "pricing", language: "ar", tone: "informal" },
-    { id: 15, userQuery: "prices", botResponse: "💰 Prices start from 30,000 EGP for simple apps, depending on complexity", category: "pricing", language: "en", tone: "informal" },
-    { id: 16, userQuery: "تكلفة موقع", botResponse: "🌐 مواقع الويب تبدأ من 25,000 جنيه حسب التصميم والمميزات المطلوبة", category: "pricing", language: "ar", tone: "informal" },
+    // Tech division
+    { id: 19, userQuery: "إيفا تك", botResponse: "إيفا تك قسم التكنولوجيا 💻 متخصص في تطوير المواقع والتطبيقات والذكاء الاصطناعي", category: "tech", language: "ar", tone: "informal" },
+    { id: 20, userQuery: "eva tech", botResponse: "Eva Tech division 💻 specialized in web/mobile development and AI solutions", category: "tech", language: "en", tone: "informal" },
     
-    // Contact
-    { id: 17, userQuery: "التواصل", botResponse: "📞 رقمنا: +20 2 1234567890\n📧 إيميل: info@evacompany.com", category: "contact", language: "ar", tone: "formal" },
-    { id: 18, userQuery: "contact", botResponse: "📞 Phone: +20 2 1234567890\n📧 Email: info@evacompany.com", category: "contact", language: "en", tone: "formal" },
-    { id: 19, userQuery: "رقم التليفون", botResponse: "📱 رقمنا: +20 2 1234567890 - متاحين من الأحد للخميس 9ص-6م", category: "contact", language: "ar", tone: "informal" },
+    // Product categories
+    { id: 21, userQuery: "منتجات العناية", botResponse: "🧴 منتجاتنا: شامبو ألو إيفا، إيفا هير كلينك، كريمات، واقي شمس، معجون أسنان، وخط واريمي الطبيعي", category: "products", language: "ar", tone: "informal" },
+    { id: 22, userQuery: "شامبو", botResponse: "شامبو ألو إيفا الطبيعي 🌿 بخلاصة الألوة فيرا - مناسب لكل أنواع الشعر", category: "products", language: "ar", tone: "informal" },
+    { id: 23, userQuery: "علاج الشعر", botResponse: "إيفا هير كلينك 💇‍♀️ علاج شامل لمشاكل الشعر - تساقط، جفاف، دهون", category: "products", language: "ar", tone: "informal" },
     
-    // Technical questions
-    { id: 20, userQuery: "تقنيات البرمجة", botResponse: "💻 نستخدم: React, Node.js, Python, Flutter, Next.js وتقنيات متقدمة تانية", category: "technical", language: "ar", tone: "informal" },
-    { id: 21, userQuery: "programming languages", botResponse: "💻 We use: React, Node.js, Python, Flutter, Next.js and other advanced technologies", category: "technical", language: "en", tone: "informal" },
+    // Quality and certifications
+    { id: 24, userQuery: "جودة المنتجات", botResponse: "🏆 منتجاتنا معتمدة من FDA والوكالة الأوروبية للأدوية ومنظمة الصحة العالمية", category: "quality", language: "ar", tone: "formal" },
+    { id: 25, userQuery: "مصانع إيفا", botResponse: "🏭 مصانعنا في الإسكندرية والقاهرة ودمياط - مطابقة لأعلى معايير الجودة العالمية", category: "manufacturing", language: "ar", tone: "formal" },
     
-    // Team and careers
-    { id: 22, userQuery: "وظائف", botResponse: "💼 عندنا وظائف مطورين ومهندسين AI! ابعت CV على info@evacompany.com", category: "careers", language: "ar", tone: "informal" },
-    { id: 23, userQuery: "jobs", botResponse: "💼 We have openings for developers and AI engineers! Send CV to info@evacompany.com", category: "careers", language: "en", tone: "informal" },
+    // History and heritage
+    { id: 26, userQuery: "تاريخ إيفا", botResponse: "📜 إيفا فارما تأسست 2017 لكن على إرث عائلي يعود لـ 1917 - أكثر من قرن من الخبرة", category: "history", language: "ar", tone: "formal" },
     
-    // Training
-    { id: 24, userQuery: "دورات تدريبية", botResponse: "🎓 عندنا دورات: تطوير الويب (3 شهور - 5000 جنيه) والذكاء الاصطناعي (4 شهور - 8000 جنيه)", category: "training", language: "ar", tone: "informal" },
-    { id: 25, userQuery: "training courses", botResponse: "🎓 We offer: Web Development (3 months - 5000 EGP) and AI (4 months - 8000 EGP)", category: "training", language: "en", tone: "informal" },
+    // Beauty and care tips
+    { id: 27, userQuery: "نصائح العناية", botResponse: "💡 نصائح إيفا: استخدمي المنتجات الطبيعية، اشربي مياه كتير، وخدي فيتامينات منتظمة", category: "tips", language: "ar", tone: "informal" },
     
-    // Projects
-    { id: 26, userQuery: "مشاريعكم", botResponse: "🏗️ عملنا مشاريع للبنوك والتجارة الإلكترونية والحكومة - 500+ مشروع مكتمل بنجاح", category: "projects", language: "ar", tone: "informal" },
-    { id: 27, userQuery: "your projects", botResponse: "🏗️ We've worked with banks, e-commerce, government - 500+ successful projects completed", category: "projects", language: "en", tone: "informal" },
-    
-    // FAQ responses
-    { id: 28, userQuery: "مدة التطوير", botResponse: "⏰ تطوير التطبيقات: 6-12 أسبوع، المواقع: 4-8 أسابيع حسب التعقيد", category: "faq", language: "ar", tone: "informal" },
-    { id: 29, userQuery: "development time", botResponse: "⏰ App development: 6-12 weeks, Websites: 4-8 weeks depending on complexity", category: "faq", language: "en", tone: "informal" },
-    
-    // Appreciations and compliments
-    { id: 30, userQuery: "شكراً", botResponse: "العفو! 😊 دايماً في الخدمة، محتاج حاجة تانية؟", category: "thanks", language: "ar", tone: "informal" },
-    { id: 31, userQuery: "thank you", botResponse: "You're welcome! 😊 Always happy to help, anything else?", category: "thanks", language: "en", tone: "informal" },
-    { id: 32, userQuery: "ممتاز", botResponse: "شكراً! 🌟 إيفا دايماً تسعى للتميز، عايز تعرف أكتر؟", category: "compliment", language: "ar", tone: "informal" },
-    { id: 33, userQuery: "excellent", botResponse: "Thanks! 🌟 Eva always strives for excellence, want to know more?", category: "compliment", language: "en", tone: "informal" }
+    // General thanks and appreciation
+    { id: 28, userQuery: "شكراً", botResponse: "العفو! 😊 دايماً في الخدمة، محتاج حاجة تانية؟", category: "thanks", language: "ar", tone: "informal" },
+    { id: 29, userQuery: "thank you", botResponse: "You're welcome! 😊 Always happy to help, anything else?", category: "thanks", language: "en", tone: "informal" },
+    { id: 30, userQuery: "ممتاز", botResponse: "شكراً! 🌟 إيفا دايماً تسعى للتميز، عايز تعرف أكتر؟", category: "compliment", language: "ar", tone: "informal" }
   ],
   smartResponses: {
     ar: { general: ["إيفا دايماً في المقدمة! عايز تعرف إيه تحديداً؟ 😊"] },
