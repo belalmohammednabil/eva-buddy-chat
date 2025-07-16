@@ -46,46 +46,93 @@ const searchEvaData = (query: string, userLanguage: 'ar' | 'en'): string | null 
   const lowerQuery = query.toLowerCase();
   const data = EVA_COMPANY_DATA;
   
-  // Enhanced greetings detection
-  if (lowerQuery.includes('hello') || lowerQuery.includes('hi') || lowerQuery.includes('أهلا') ||
-      lowerQuery.includes('مرحبا') || lowerQuery.includes('السلام') || lowerQuery.includes('صباح') ||
-      lowerQuery.includes('مساء') || lowerQuery.includes('إزيك') || lowerQuery.includes('ازيك') ||
-      lowerQuery.includes('ازاي') || lowerQuery.includes('عامل') || lowerQuery.includes('اخبارك')) {
-    return userLanguage === 'ar'
-      ? `أهلاً وسهلاً! 🌟 أنا مساعد إيفا الذكي، هنا علشان أساعدك في كل اللي تحتاجه!\n\n🚀 أقدر أساعدك في:\n• معرفة خدماتنا ومنتجاتنا الكاملة\n• معلومات عن الأسعار والعروض الحالية\n• تفاصيل المشاريع والتدريبات المتاحة\n• التواصل مع الفريق والدعم الفني\n\n💬 ممكن تسألني عن أي حاجة تخص إيفا! إزاي أقدر أساعدك النهاردة؟ 😊`
-      : `Hello and welcome! 🌟 I'm Eva's intelligent assistant, here to help you with everything you need!\n\n🚀 I can assist you with:\n• Complete information about our services and products\n• Current pricing and promotional offers\n• Available projects and training details\n• Team contact and technical support\n\n💬 Feel free to ask me anything about Eva! How can I help you today? 😊`;
+  // First check conversation database for exact matches
+  const matchingConversations = CONVERSATION_DATABASE.conversations.filter(conv => {
+    const queryWords = lowerQuery.split(' ');
+    const convWords = conv.userQuery.toLowerCase().split(' ');
+    
+    // Check for exact match or partial match
+    return lowerQuery.includes(conv.userQuery.toLowerCase()) || 
+           conv.userQuery.toLowerCase().includes(lowerQuery) ||
+           queryWords.some(word => convWords.some(convWord => 
+             word.length > 2 && convWord.includes(word)
+           ));
+  });
+
+  if (matchingConversations.length > 0) {
+    // Prefer same language matches
+    const languageMatches = matchingConversations.filter(conv => conv.language === userLanguage);
+    if (languageMatches.length > 0) {
+      return languageMatches[0].botResponse;
+    }
+    return matchingConversations[0].botResponse;
   }
   
-  // Company information - expanded
+  // Company information - concise
   if (lowerQuery.includes('company') || lowerQuery.includes('شركة') || lowerQuery.includes('إيفا') || 
-      lowerQuery.includes('eva') || lowerQuery.includes('about') || lowerQuery.includes('عن')) {
+      lowerQuery.includes('eva') || lowerQuery.includes('about') || lowerQuery.includes('عن') ||
+      lowerQuery.includes('تأسست') || lowerQuery.includes('founded')) {
     return userLanguage === 'ar' 
-      ? `🏢 شركة إيفا - قصة نجاح تقنية مميزة!\n\n📅 تأسست: ${data.company.established}\n📍 المقر الرئيسي: ${data.company.headquarters}\n🏢 الفروع: ${data.company.branches.join(' • ')}\n👥 فريق العمل: ${data.company.employees}\n💰 الإيرادات: ${data.company.revenue}\n📈 النمو: ${data.company.growth}\n\n🏆 الجوائز:\n${data.company.awards.map(award => `• ${award}`).join('\n')}\n\n📜 الشهادات:\n${data.company.certifications.join(' • ')}\n\n✨ رسالتنا: ${data.company.mission}\n🎯 رؤيتنا: ${data.company.vision}\n\nإحنا مش مجرد شركة تكنولوجيا، إحنا شركاء نجاحك في العصر الرقمي! 🚀`
-      : `🏢 Eva Company - A Distinguished Tech Success Story!\n\n📅 Established: ${data.company.established}\n📍 Headquarters: ${data.company.headquartersEn}\n🏢 Branches: ${data.company.branchesEn.join(' • ')}\n👥 Team: ${data.company.employees}\n💰 Revenue: ${data.company.revenueEn}\n📈 Growth: ${data.company.growthEn}\n\n🏆 Awards:\n${data.company.awardsEn.map(award => `• ${award}`).join('\n')}\n\n📜 Certifications:\n${data.company.certifications.join(' • ')}\n\n✨ Our mission: ${data.company.missionEn}\n🎯 Our vision: ${data.company.visionEn}\n\nWe're not just a tech company, we're your success partners in the digital age! 🚀`;
+      ? `🏢 إيفا شركة تكنولوجيا رائدة تأسست 2020\n📍 المقر: القاهرة\n🏢 الفروع: الإسكندرية، الجيزة، العاصمة الإدارية\n👥 فريق: 500+ موظف\n📈 نمو: 200% سنوياً\n🏆 جوائز: أفضل شركة تكنولوجيا ناشئة 2023`
+      : `🏢 Eva is a leading tech company founded in 2020\n📍 HQ: Cairo\n🏢 Branches: Alexandria, Giza, New Capital\n👥 Team: 500+ employees\n📈 Growth: 200% annually\n🏆 Awards: Best Tech Startup 2023`;
   }
 
-  // Services - comprehensive
+  // Services - concise
   if (lowerQuery.includes('service') || lowerQuery.includes('خدمة') || lowerQuery.includes('خدمات') || 
-      lowerQuery.includes('development') || lowerQuery.includes('تطوير') || lowerQuery.includes('solutions')) {
-    const services = Object.values(data.services);
-    const servicesList = services.map((service, index) => 
-      userLanguage === 'ar' 
-        ? `${index + 1}. 💼 ${service.name}:\n   📝 ${service.description}${'pricing' in service ? `\n   💰 السعر: ${service.pricing}` : ''}`
-        : `${index + 1}. 💼 ${service.nameEn}:\n   📝 ${service.descriptionEn}${'pricingEn' in service ? `\n   💰 Price: ${service.pricingEn}` : ''}`
-    ).join('\n\n');
-    
+      lowerQuery.includes('development') || lowerQuery.includes('تطوير') || lowerQuery.includes('solutions') ||
+      lowerQuery.includes('حلول') || lowerQuery.includes('منتجات') || lowerQuery.includes('products')) {
     return userLanguage === 'ar'
-      ? `🚀 خدماتنا المتميزة والشاملة:\n\n${servicesList}\n\n📊 إحصائياتنا المشرّفة:\n• ${data.statistics.projectsCompleted}\n• ${data.statistics.successRate}\n• ${data.statistics.clientSatisfaction}\n\n🎯 عايز تعرف تفاصيل أكتر عن خدمة معينة؟ اسألني براحتك! 💪`
-      : `🚀 Our Distinguished and Comprehensive Services:\n\n${servicesList}\n\n📊 Our Outstanding Statistics:\n• ${data.statistics.projectsCompletedEn}\n• ${data.statistics.successRateEn}\n• ${data.statistics.clientSatisfactionEn}\n\n🎯 Want to know more details about a specific service? Just ask! 💪`;
+      ? `🔧 خدماتنا الرئيسية:\n• تطوير المواقع والتطبيقات (من 30,000 ج.م)\n• الذكاء الاصطناعي والتحول الرقمي\n• الحلول السحابية (AWS, Azure, Google Cloud)\n• التجارة الإلكترونية والمتاجر الرقمية\n\n📊 500+ مشروع مكتمل | 98% معدل نجاح`
+      : `🔧 Our main services:\n• Web & mobile development (from 30,000 EGP)\n• AI solutions & digital transformation\n• Cloud solutions (AWS, Azure, Google Cloud)\n• E-commerce & digital stores\n\n📊 500+ completed projects | 98% success rate`;
   }
 
-  // Contact information - enhanced
+  // Contact information - concise
   if (lowerQuery.includes('contact') || lowerQuery.includes('تواصل') || lowerQuery.includes('رقم') || 
       lowerQuery.includes('ايميل') || lowerQuery.includes('email') || lowerQuery.includes('phone') ||
-      lowerQuery.includes('address') || lowerQuery.includes('عنوان')) {
+      lowerQuery.includes('address') || lowerQuery.includes('عنوان') || lowerQuery.includes('location') ||
+      lowerQuery.includes('موقع') || lowerQuery.includes('اتصال') || lowerQuery.includes('call')) {
     return userLanguage === 'ar'
-      ? `📞 معلومات التواصل الكاملة:\n\n🏢 المقر الرئيسي:\n📍 ${data.contact.address}\n\n📱 أرقام التواصل:\n• الهاتف الرئيسي: ${data.contact.phone}\n\n📧 البريد الإلكتروني:\n• الإيميل العام: ${data.contact.email}\n• الدعم الفني: ${data.contact.supportEmail}\n• المبيعات: ${data.contact.salesEmail}\n\n🌐 الموقع الإلكتروني: ${data.contact.website}\n\n🕒 ساعات العمل: ${data.contact.workingHours}\n\n💬 إحنا دايماً مستعدين نساعدك! اتصل بينا في أي وقت! 🤝`
-      : `📞 Complete Contact Information:\n\n🏢 Headquarters:\n📍 ${data.contact.addressEn}\n\n📱 Contact Numbers:\n• Main Phone: ${data.contact.phone}\n\n📧 Email Addresses:\n• General Email: ${data.contact.email}\n• Technical Support: ${data.contact.supportEmail}\n• Sales: ${data.contact.salesEmail}\n\n🌐 Website: ${data.contact.website}\n\n🕒 Working Hours: ${data.contact.workingHoursEn}\n\n💬 We're always ready to help! Contact us anytime! 🤝`;
+      ? `📞 معلومات التواصل:\n📱 ${data.contact.phone}\n📧 ${data.contact.email}\n📍 123 شارع التحرير، القاهرة\n🕒 الأحد-الخميس: 9ص-6م\n💼 المبيعات: ${data.contact.salesEmail}`
+      : `📞 Contact info:\n📱 ${data.contact.phone}\n📧 ${data.contact.email}\n📍 123 Tahrir Street, Cairo\n🕒 Sun-Thu: 9AM-6PM\n💼 Sales: ${data.contact.salesEmail}`;
+  }
+
+  // Pricing - concise
+  if (lowerQuery.includes('price') || lowerQuery.includes('cost') || lowerQuery.includes('سعر') || 
+      lowerQuery.includes('تكلفة') || lowerQuery.includes('فلوس') || lowerQuery.includes('budget') ||
+      lowerQuery.includes('quote') || lowerQuery.includes('عرض سعر') || lowerQuery.includes('ميزانية') ||
+      lowerQuery.includes('كام')) {
+    return userLanguage === 'ar'
+      ? `💰 أسعارنا:\n📱 تطبيقات الموبايل: من 30,000 ج.م\n🌐 مواقع الويب: من 25,000 ج.م\n🤖 حلول الذكاء الاصطناعي: حسب المشروع\n📊 إدارة العملاء CRM: 500 ج.م/شهر/مستخدم\n💡 استشارة مجانية أولى!`
+      : `💰 Our pricing:\n📱 Mobile apps: from 30,000 EGP\n🌐 Websites: from 25,000 EGP\n🤖 AI solutions: project-based\n📊 CRM system: 500 EGP/month/user\n💡 Free initial consultation!`;
+  }
+
+  // Team and careers - concise
+  if (lowerQuery.includes('team') || lowerQuery.includes('فريق') || lowerQuery.includes('موظف') || 
+      lowerQuery.includes('staff') || lowerQuery.includes('employees') || lowerQuery.includes('career') ||
+      lowerQuery.includes('وظيفة') || lowerQuery.includes('وظائف') || lowerQuery.includes('job') ||
+      lowerQuery.includes('work') || lowerQuery.includes('شغل') || lowerQuery.includes('hiring')) {
+    return userLanguage === 'ar'
+      ? `👥 فريق إيفا:\n👨‍💻 50+ مطور\n🎨 15+ مصمم\n📈 20+ متخصص تسويق\n\n💼 وظائف متاحة:\n• مطور Full Stack (القاهرة)\n• مهندس AI (عن بُعد)\n\nابعت CV: ${data.contact.email}`
+      : `👥 Eva team:\n👨‍💻 50+ developers\n🎨 15+ designers\n📈 20+ marketing specialists\n\n💼 Open positions:\n• Full Stack Developer (Cairo)\n• AI Engineer (Remote)\n\nSend CV: ${data.contact.email}`;
+  }
+
+  // Training - concise
+  if (lowerQuery.includes('training') || lowerQuery.includes('تدريب') || lowerQuery.includes('course') ||
+      lowerQuery.includes('دورة') || lowerQuery.includes('دورات') || lowerQuery.includes('learning') ||
+      lowerQuery.includes('تعلم') || lowerQuery.includes('education') || lowerQuery.includes('تعليم')) {
+    return userLanguage === 'ar'
+      ? `🎓 دوراتنا التدريبية:\n• تطوير الويب: 3 شهور - 5,000 ج.م\n• الذكاء الاصطناعي: 4 شهور - 8,000 ج.م\n🏆 شهادات معتمدة مع ضمان التوظيف\n📝 التسجيل: ${data.contact.email}`
+      : `🎓 Our training courses:\n• Web Development: 3 months - 5,000 EGP\n• AI Course: 4 months - 8,000 EGP\n🏆 Certified with job guarantee\n📝 Registration: ${data.contact.email}`;
+  }
+
+  // Technologies - concise
+  if (lowerQuery.includes('technology') || lowerQuery.includes('tech') || lowerQuery.includes('تكنولوجيا') || 
+      lowerQuery.includes('تقنية') || lowerQuery.includes('برمجة') || lowerQuery.includes('programming') ||
+      lowerQuery.includes('tools') || lowerQuery.includes('أدوات') || lowerQuery.includes('stack') ||
+      lowerQuery.includes('framework') || lowerQuery.includes('library')) {
+    return userLanguage === 'ar'
+      ? `💻 تقنياتنا:\n🎨 Frontend: React, Vue.js, Next.js\n⚙️ Backend: Node.js, Python, Java\n📱 Mobile: React Native, Flutter\n🗄️ Database: MySQL, MongoDB\n☁️ Cloud: AWS, Azure, Google Cloud\n🧠 AI: TensorFlow, PyTorch`
+      : `💻 Our technologies:\n🎨 Frontend: React, Vue.js, Next.js\n⚙️ Backend: Node.js, Python, Java\n📱 Mobile: React Native, Flutter\n🗄️ Database: MySQL, MongoDB\n☁️ Cloud: AWS, Azure, Google Cloud\n🧠 AI: TensorFlow, PyTorch`;
   }
 
   return null;

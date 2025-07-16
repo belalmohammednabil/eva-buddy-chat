@@ -334,9 +334,62 @@ export const EVA_COMPANY_DATA = {
 // المحادثات المرجعية الشاملة
 export const CONVERSATION_DATABASE = {
   conversations: [
-    { id: 1, userQuery: "ازيك؟", botResponse: "أنا زي الفل، يا صديقي! 😊 عايز نكلم عن إيفا كوزمتكس؟", category: "greeting", language: "ar", tone: "informal" },
-    { id: 2, userQuery: "من أسس إيفا؟", botResponse: "تأسست إيفا كوزمتكس بواسطة الدكتور منير رياض أرمانيوس، بناءً على إرث والده من 1917", category: "company", language: "ar", tone: "formal" },
-    { id: 3, userQuery: "إيه منتجات إيفا؟", botResponse: "إيفا عندهم تشكيلة واسعة: شامبو ألو إيفا، إيفا هير كلينك، منتجات Warimi، ومعجون E-Line", category: "products", language: "ar", tone: "informal" }
+    // Arabic greetings and general
+    { id: 1, userQuery: "ازيك", botResponse: "أهلاً! 🌟 عامل إيه؟ محتاج مساعدة في إيه؟", category: "greeting", language: "ar", tone: "informal" },
+    { id: 2, userQuery: "السلام عليكم", botResponse: "وعليكم السلام ورحمة الله! أهلاً بيك 🤝", category: "greeting", language: "ar", tone: "formal" },
+    { id: 3, userQuery: "صباح الخير", botResponse: "صباح النور! 🌅 نورت إيفا النهاردة", category: "greeting", language: "ar", tone: "formal" },
+    { id: 4, userQuery: "مساء الخير", botResponse: "مساء النور! 🌙 إزاي يمكن أساعدك؟", category: "greeting", language: "ar", tone: "formal" },
+    
+    // English greetings
+    { id: 5, userQuery: "hello", botResponse: "Hello there! 👋 How can Eva help you today?", category: "greeting", language: "en", tone: "informal" },
+    { id: 6, userQuery: "good morning", botResponse: "Good morning! ☀️ Welcome to Eva!", category: "greeting", language: "en", tone: "formal" },
+    { id: 7, userQuery: "hi", botResponse: "Hi! 😊 What would you like to know about Eva?", category: "greeting", language: "en", tone: "informal" },
+    
+    // Company info
+    { id: 8, userQuery: "إيه هي إيفا", botResponse: "إيفا شركة تكنولوجيا رائدة 🚀 متخصصة في التطوير والذكاء الاصطناعي", category: "company", language: "ar", tone: "informal" },
+    { id: 9, userQuery: "what is eva", botResponse: "Eva is a leading tech company 🚀 specialized in development and AI", category: "company", language: "en", tone: "informal" },
+    { id: 10, userQuery: "متى تأسست إيفا", botResponse: "تأسست إيفا سنة 2020 📅 وبقالنا 4 سنين نقدم حلول تقنية مبتكرة", category: "company", language: "ar", tone: "informal" },
+    
+    // Services
+    { id: 11, userQuery: "إيه خدماتكم", botResponse: "🔧 خدماتنا: تطوير المواقع والتطبيقات، الذكاء الاصطناعي، التحول الرقمي، والحلول السحابية", category: "services", language: "ar", tone: "informal" },
+    { id: 12, userQuery: "your services", botResponse: "🔧 Our services: Web & mobile development, AI solutions, digital transformation, cloud services", category: "services", language: "en", tone: "informal" },
+    { id: 13, userQuery: "تطوير تطبيقات", botResponse: "نطور تطبيقات موبايل وويب باحترافية عالية 📱💻 بأحدث التقنيات", category: "services", language: "ar", tone: "informal" },
+    
+    // Pricing
+    { id: 14, userQuery: "كام السعر", botResponse: "💰 الأسعار تبدأ من 30,000 جنيه للتطبيقات البسيطة حسب التعقيد والمميزات", category: "pricing", language: "ar", tone: "informal" },
+    { id: 15, userQuery: "prices", botResponse: "💰 Prices start from 30,000 EGP for simple apps, depending on complexity", category: "pricing", language: "en", tone: "informal" },
+    { id: 16, userQuery: "تكلفة موقع", botResponse: "🌐 مواقع الويب تبدأ من 25,000 جنيه حسب التصميم والمميزات المطلوبة", category: "pricing", language: "ar", tone: "informal" },
+    
+    // Contact
+    { id: 17, userQuery: "التواصل", botResponse: "📞 رقمنا: +20 2 1234567890\n📧 إيميل: info@evacompany.com", category: "contact", language: "ar", tone: "formal" },
+    { id: 18, userQuery: "contact", botResponse: "📞 Phone: +20 2 1234567890\n📧 Email: info@evacompany.com", category: "contact", language: "en", tone: "formal" },
+    { id: 19, userQuery: "رقم التليفون", botResponse: "📱 رقمنا: +20 2 1234567890 - متاحين من الأحد للخميس 9ص-6م", category: "contact", language: "ar", tone: "informal" },
+    
+    // Technical questions
+    { id: 20, userQuery: "تقنيات البرمجة", botResponse: "💻 نستخدم: React, Node.js, Python, Flutter, Next.js وتقنيات متقدمة تانية", category: "technical", language: "ar", tone: "informal" },
+    { id: 21, userQuery: "programming languages", botResponse: "💻 We use: React, Node.js, Python, Flutter, Next.js and other advanced technologies", category: "technical", language: "en", tone: "informal" },
+    
+    // Team and careers
+    { id: 22, userQuery: "وظائف", botResponse: "💼 عندنا وظائف مطورين ومهندسين AI! ابعت CV على info@evacompany.com", category: "careers", language: "ar", tone: "informal" },
+    { id: 23, userQuery: "jobs", botResponse: "💼 We have openings for developers and AI engineers! Send CV to info@evacompany.com", category: "careers", language: "en", tone: "informal" },
+    
+    // Training
+    { id: 24, userQuery: "دورات تدريبية", botResponse: "🎓 عندنا دورات: تطوير الويب (3 شهور - 5000 جنيه) والذكاء الاصطناعي (4 شهور - 8000 جنيه)", category: "training", language: "ar", tone: "informal" },
+    { id: 25, userQuery: "training courses", botResponse: "🎓 We offer: Web Development (3 months - 5000 EGP) and AI (4 months - 8000 EGP)", category: "training", language: "en", tone: "informal" },
+    
+    // Projects
+    { id: 26, userQuery: "مشاريعكم", botResponse: "🏗️ عملنا مشاريع للبنوك والتجارة الإلكترونية والحكومة - 500+ مشروع مكتمل بنجاح", category: "projects", language: "ar", tone: "informal" },
+    { id: 27, userQuery: "your projects", botResponse: "🏗️ We've worked with banks, e-commerce, government - 500+ successful projects completed", category: "projects", language: "en", tone: "informal" },
+    
+    // FAQ responses
+    { id: 28, userQuery: "مدة التطوير", botResponse: "⏰ تطوير التطبيقات: 6-12 أسبوع، المواقع: 4-8 أسابيع حسب التعقيد", category: "faq", language: "ar", tone: "informal" },
+    { id: 29, userQuery: "development time", botResponse: "⏰ App development: 6-12 weeks, Websites: 4-8 weeks depending on complexity", category: "faq", language: "en", tone: "informal" },
+    
+    // Appreciations and compliments
+    { id: 30, userQuery: "شكراً", botResponse: "العفو! 😊 دايماً في الخدمة، محتاج حاجة تانية؟", category: "thanks", language: "ar", tone: "informal" },
+    { id: 31, userQuery: "thank you", botResponse: "You're welcome! 😊 Always happy to help, anything else?", category: "thanks", language: "en", tone: "informal" },
+    { id: 32, userQuery: "ممتاز", botResponse: "شكراً! 🌟 إيفا دايماً تسعى للتميز، عايز تعرف أكتر؟", category: "compliment", language: "ar", tone: "informal" },
+    { id: 33, userQuery: "excellent", botResponse: "Thanks! 🌟 Eva always strives for excellence, want to know more?", category: "compliment", language: "en", tone: "informal" }
   ],
   smartResponses: {
     ar: { general: ["إيفا دايماً في المقدمة! عايز تعرف إيه تحديداً؟ 😊"] },
