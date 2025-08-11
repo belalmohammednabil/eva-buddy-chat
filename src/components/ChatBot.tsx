@@ -6,8 +6,26 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { EVA_COMPANY_DATA, SMART_RESPONSES, CONVERSATION_DATABASE, CONVERSATION_PATTERNS } from '@/data/evaData';
+import { EVA_COMPANY_DATA, SKIN_ANALYSIS, evaProducts, SKIN_CONSULTATION, CONVERSATION_DATA } from '@/data/evaData';
 
+// Local patterns and lightweight conversation DB for tone detection and quick replies
+const CONVERSATION_PATTERNS = {
+  formal: {
+    ar: ['من فضلك', 'لو سمحت', 'رجاء', 'هل يمكن', 'أحتاج'],
+    en: ['please', 'could you', 'would you', 'i need', 'kindly']
+  },
+  informal: {
+    ar: ['عايز', 'عاوزه', 'عايزة', 'انا عايز', 'فين', 'كام', 'ايه'],
+    en: ['i want', 'hey', 'hi', 'yo', 'what', 'price', 'how much']
+  }
+} as const;
+
+const CONVERSATION_DATABASE = {
+  conversations: [
+    { userQuery: 'من انتم', botResponse: 'نحن إيفا – نقدم حلول تجميل وصحة مدعومة بالعلم.', language: 'ar' as const },
+    { userQuery: 'what is eva', botResponse: 'Eva provides science-backed beauty and skincare solutions.', language: 'en' as const },
+  ]
+} as const;
 interface Message {
   id: string;
   content: string;
@@ -45,94 +63,101 @@ const detectTone = (text: string, language: 'ar' | 'en'): 'formal' | 'informal' 
 const searchEvaData = (query: string, userLanguage: 'ar' | 'en'): string | null => {
   const lowerQuery = query.toLowerCase();
   const data = EVA_COMPANY_DATA;
+
+  // 1) Skin problem analysis -> product recommendations
+  try {
+    const matchedProblems = Object.entries(SKIN_ANALYSIS.problemKeywords)
+      .filter(([_, keywords]) => keywords.some(k => lowerQuery.includes(k.toLowerCase())))
+      .map(([key]) => key);
+
+    if (matchedProblems.length > 0) {
+      const ids = Array.from(new Set(matchedProblems.flatMap(p => (SKIN_ANALYSIS.solutions as any)[p] || [])));
+      const prods = evaProducts.filter(p => ids.includes(p.id)).slice(0, 5);
+
+      const arMap: Record<string, string> = {
+        acne: 'حبوب', oily: 'بشرة دهنية', dry: 'جفاف', sensitive: 'حساسية', aging: 'شيخوخة', darkSpots: 'تصبغات', pores: 'مسام واسعة', dullness: 'بهتان'
+      };
+
+      const problemsLabelAR = matchedProblems.map(p => arMap[p] || p).join('، ');
+      const problemsLabelEN = matchedProblems.join(', ');
+
+      const influencerWords = ['تريند','يوتيوبر','تيك','tiktok','trend','influencer'];
+      const cautionAR = influencerWords.some(w => lowerQuery.includes(w))
+        ? 'مهم: اختاري على أساس الدليل العلمي، مش التريند. التوصيات التالية آمنة ومدعومة طبيًا.'
+        : SKIN_CONSULTATION.medicalAdvice[1];
+      const cautionEN = influencerWords.some(w => lowerQuery.includes(w))
+        ? 'Important: choose science-based products, not trends. These are safe, dermatologist-backed picks.'
+        : SKIN_CONSULTATION.medicalAdvice[1];
+
+      const listAR = prods.map(p => `• ${p.name} (ID: ${p.id}) — ${(p.keyBenefits?.[0] || '').trim()}\nسعر: ${p.price} EGP • شراء: https://eva-cosmetics.com/p/${p.id}`).join('\n');
+      const listEN = prods.map(p => `• ${p.name} (ID: ${p.id}) — ${(p.keyBenefits?.[0] || '').trim()}\nPrice: EGP ${p.price} • Buy: https://eva-cosmetics.com/p/${p.id}`).join('\n');
+
+      return userLanguage === 'ar'
+        ? `بناءً على وصفك (${problemsLabelAR})، دي أفضل ترشيحات مناسبة لك:\n${listAR}\n\n${cautionAR}`
+        : `Based on your description (${problemsLabelEN}), here are top picks for you:\n${listEN}\n\n${cautionEN}`;
+    }
+  } catch {}
   
-  // First check conversation database for exact matches
+  // 2) Conversation DB quick matches
   const matchingConversations = CONVERSATION_DATABASE.conversations.filter(conv => {
     const queryWords = lowerQuery.split(' ');
     const convWords = conv.userQuery.toLowerCase().split(' ');
-    
-    // Check for exact match or partial match
     return lowerQuery.includes(conv.userQuery.toLowerCase()) || 
            conv.userQuery.toLowerCase().includes(lowerQuery) ||
-           queryWords.some(word => convWords.some(convWord => 
-             word.length > 2 && convWord.includes(word)
-           ));
+           queryWords.some(word => convWords.some(convWord => word.length > 2 && convWord.includes(word)));
   });
 
   if (matchingConversations.length > 0) {
-    // Prefer same language matches
     const languageMatches = matchingConversations.filter(conv => conv.language === userLanguage);
-    if (languageMatches.length > 0) {
-      return languageMatches[0].botResponse;
-    }
+    if (languageMatches.length > 0) return languageMatches[0].botResponse;
     return matchingConversations[0].botResponse;
   }
-  
-  // Company information - concise
+
+  // 3) Company information - concise
   if (lowerQuery.includes('company') || lowerQuery.includes('شركة') || lowerQuery.includes('إيفا') || 
       lowerQuery.includes('eva') || lowerQuery.includes('about') || lowerQuery.includes('عن') ||
       lowerQuery.includes('تأسست') || lowerQuery.includes('founded')) {
     return userLanguage === 'ar' 
-      ? `🏢 إيفا شركة تكنولوجيا رائدة تأسست 2020\n📍 المقر: القاهرة\n🏢 الفروع: الإسكندرية، الجيزة، العاصمة الإدارية\n👥 فريق: 500+ موظف\n📈 نمو: 200% سنوياً\n🏆 جوائز: أفضل شركة تكنولوجيا ناشئة 2023`
-      : `🏢 Eva is a leading tech company founded in 2020\n📍 HQ: Cairo\n🏢 Branches: Alexandria, Giza, New Capital\n👥 Team: 500+ employees\n📈 Growth: 200% annually\n🏆 Awards: Best Tech Startup 2023`;
+      ? `🏢 إيفا شركة رائدة في مستحضرات التجميل والعناية الصحية\n📍 القاهرة • فروع: الإسكندرية، الجيزة\n👥 فريق متخصص • جودة معتمدة`
+      : `🏢 Eva is a leading beauty and healthcare brand\n📍 Cairo • Branches: Alexandria, Giza\n👥 Expert team • Certified quality`;
   }
 
-  // Services - concise
+  // 4) Services/Products overview - concise
   if (lowerQuery.includes('service') || lowerQuery.includes('خدمة') || lowerQuery.includes('خدمات') || 
-      lowerQuery.includes('development') || lowerQuery.includes('تطوير') || lowerQuery.includes('solutions') ||
-      lowerQuery.includes('حلول') || lowerQuery.includes('منتجات') || lowerQuery.includes('products')) {
+      lowerQuery.includes('solutions') || lowerQuery.includes('حلول') || lowerQuery.includes('منتجات') || lowerQuery.includes('products')) {
     return userLanguage === 'ar'
-      ? `🔧 خدماتنا الرئيسية:\n• تطوير المواقع والتطبيقات (من 30,000 ج.م)\n• الذكاء الاصطناعي والتحول الرقمي\n• الحلول السحابية (AWS, Azure, Google Cloud)\n• التجارة الإلكترونية والمتاجر الرقمية\n\n📊 500+ مشروع مكتمل | 98% معدل نجاح`
-      : `🔧 Our main services:\n• Web & mobile development (from 30,000 EGP)\n• AI solutions & digital transformation\n• Cloud solutions (AWS, Azure, Google Cloud)\n• E-commerce & digital stores\n\n📊 500+ completed projects | 98% success rate`;
+      ? `🔧 المجالات:\n• عناية بالبشرة • عناية بالشعر • مكياج\n🤝 توصيات ذكية + شراء مباشر عبر المتجر`
+      : `🔧 Areas:\n• Skincare • Haircare • Makeup\n🤝 Smart recommendations + one-click purchase`;
   }
 
-  // Contact information - concise
+  // 5) Contact information - concise
   if (lowerQuery.includes('contact') || lowerQuery.includes('تواصل') || lowerQuery.includes('رقم') || 
       lowerQuery.includes('ايميل') || lowerQuery.includes('email') || lowerQuery.includes('phone') ||
       lowerQuery.includes('address') || lowerQuery.includes('عنوان') || lowerQuery.includes('location') ||
       lowerQuery.includes('موقع') || lowerQuery.includes('اتصال') || lowerQuery.includes('call')) {
     return userLanguage === 'ar'
-      ? `📞 معلومات التواصل:\n🏥 إيفا فارما: ${data.contact.evaPharma.phone}\n💻 إيفا تك: ${data.contact.evaTech.phone}\n📧 إيميل فارما: ${data.contact.evaPharma.email}\n📧 إيميل تك: ${data.contact.evaTech.email}\n🕒 ساعات العمل: السبت-الخميس 8:30ص-5:30م`
-      : `📞 Contact info:\n🏥 Eva Pharma: ${data.contact.evaPharma.phone}\n💻 Eva Tech: ${data.contact.evaTech.phone}\n📧 Pharma email: ${data.contact.evaPharma.email}\n📧 Tech email: ${data.contact.evaTech.email}\n🕒 Working hours: Sat-Thu 8:30AM-5:30PM`;
+      ? `📞 تواصل:\n🏥 إيفا فارما: ${(data as any).contact?.evaPharma?.phone || '+20 2 1234 5678'}\n💄 إيفا كوزمتيكس: ${(data as any).contact?.evaCosmetics?.phone || '+20 2 8765 4321'}\n📧 فارما: ${(data as any).contact?.evaPharma?.email || 'contact@evapharma.com'}\n📧 كوزمتيكس: ${(data as any).contact?.evaCosmetics?.email || 'support@evacosmetics.com'}`
+      : `📞 Contact:\n🏥 Eva Pharma: ${(data as any).contact?.evaPharma?.phone || '+20 2 1234 5678'}\n💄 Eva Cosmetics: ${(data as any).contact?.evaCosmetics?.phone || '+20 2 8765 4321'}\n📧 Pharma: ${(data as any).contact?.evaPharma?.email || 'contact@evapharma.com'}\n📧 Cosmetics: ${(data as any).contact?.evaCosmetics?.email || 'support@evacosmetics.com'}`;
   }
 
-  // Pricing - concise
+  // 6) Pricing - concise
   if (lowerQuery.includes('price') || lowerQuery.includes('cost') || lowerQuery.includes('سعر') || 
       lowerQuery.includes('تكلفة') || lowerQuery.includes('فلوس') || lowerQuery.includes('budget') ||
       lowerQuery.includes('quote') || lowerQuery.includes('عرض سعر') || lowerQuery.includes('ميزانية') ||
       lowerQuery.includes('كام')) {
     return userLanguage === 'ar'
-      ? `💰 أسعارنا:\n📱 تطبيقات الموبايل: من 30,000 ج.م\n🌐 مواقع الويب: من 25,000 ج.م\n🤖 حلول الذكاء الاصطناعي: حسب المشروع\n📊 إدارة العملاء CRM: 500 ج.م/شهر/مستخدم\n💡 استشارة مجانية أولى!`
-      : `💰 Our pricing:\n📱 Mobile apps: from 30,000 EGP\n🌐 Websites: from 25,000 EGP\n🤖 AI solutions: project-based\n📊 CRM system: 500 EGP/month/user\n💡 Free initial consultation!`;
+      ? `💰 الأسعار تختلف حسب المنتج؛ منظف الوجه يبدأ من 150 ج.م، والمرطب من 220 ج.م، والواقي من الشمس من 250 ج.م.`
+      : `💰 Prices vary by product; cleansers from 150 EGP, moisturizers from 220 EGP, sunscreen from 250 EGP.`;
   }
 
-  // Team and careers - concise
-  if (lowerQuery.includes('team') || lowerQuery.includes('فريق') || lowerQuery.includes('موظف') || 
-      lowerQuery.includes('staff') || lowerQuery.includes('employees') || lowerQuery.includes('career') ||
-      lowerQuery.includes('وظيفة') || lowerQuery.includes('وظائف') || lowerQuery.includes('job') ||
-      lowerQuery.includes('work') || lowerQuery.includes('شغل') || lowerQuery.includes('hiring')) {
-    return userLanguage === 'ar'
-      ? `👥 فريق إيفا:\n👨‍💻 50+ مطور\n🎨 15+ مصمم\n📈 20+ متخصص تسويق\n\n💼 وظائف متاحة:\n• مطور Full Stack (القاهرة)\n• مهندس AI (عن بُعد)\n\nابعت CV: ${data.contact.evaTech.email}`
-      : `👥 Eva team:\n👨‍💻 50+ developers\n🎨 15+ designers\n📈 20+ marketing specialists\n\n💼 Open positions:\n• Full Stack Developer (Cairo)\n• AI Engineer (Remote)\n\nSend CV: ${data.contact.evaTech.email}`;
-  }
-
-  // Training - concise
-  if (lowerQuery.includes('training') || lowerQuery.includes('تدريب') || lowerQuery.includes('course') ||
-      lowerQuery.includes('دورة') || lowerQuery.includes('دورات') || lowerQuery.includes('learning') ||
-      lowerQuery.includes('تعلم') || lowerQuery.includes('education') || lowerQuery.includes('تعليم')) {
-    return userLanguage === 'ar'
-      ? `🎓 دوراتنا التدريبية:\n• تطوير الويب: 3 شهور - 5,000 ج.م\n• الذكاء الاصطناعي: 4 شهور - 8,000 ج.م\n🏆 شهادات معتمدة مع ضمان التوظيف\n📝 التسجيل: ${data.contact.evaTech.email}`
-      : `🎓 Our training courses:\n• Web Development: 3 months - 5,000 EGP\n• AI Course: 4 months - 8,000 EGP\n🏆 Certified with job guarantee\n📝 Registration: ${data.contact.evaTech.email}`;
-  }
-
-  // Technologies - concise
+  // 7) Technologies/stack - concise (kept)
   if (lowerQuery.includes('technology') || lowerQuery.includes('tech') || lowerQuery.includes('تكنولوجيا') || 
       lowerQuery.includes('تقنية') || lowerQuery.includes('برمجة') || lowerQuery.includes('programming') ||
       lowerQuery.includes('tools') || lowerQuery.includes('أدوات') || lowerQuery.includes('stack') ||
       lowerQuery.includes('framework') || lowerQuery.includes('library')) {
     return userLanguage === 'ar'
-      ? `💻 تقنياتنا:\n🎨 Frontend: React, Vue.js, Next.js\n⚙️ Backend: Node.js, Python, Java\n📱 Mobile: React Native, Flutter\n🗄️ Database: MySQL, MongoDB\n☁️ Cloud: AWS, Azure, Google Cloud\n🧠 AI: TensorFlow, PyTorch`
-      : `💻 Our technologies:\n🎨 Frontend: React, Vue.js, Next.js\n⚙️ Backend: Node.js, Python, Java\n📱 Mobile: React Native, Flutter\n🗄️ Database: MySQL, MongoDB\n☁️ Cloud: AWS, Azure, Google Cloud\n🧠 AI: TensorFlow, PyTorch`;
+      ? `💻 داخل منصة التوصية الذكية نستخدم مطابقة كلمات مفتاحية وتحليل نبرة الكلام لضمان توصيات دقيقة وسريعة.`
+      : `💻 Our smart recommender uses keyword matching and tone analysis for accurate, fast suggestions.`;
   }
 
   return null;
@@ -147,8 +172,10 @@ const EvaChatbot: React.FC<ChatbotProps> = ({ apiKey = 'demo-key' }) => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [conversationMode, setConversationMode] = useState<'smart' | 'eva-only' | 'ai-only'>('smart');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+const messagesEndRef = useRef<HTMLDivElement>(null);
+const recognitionRef = useRef<any>(null);
+const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+const { toast } = useToast();
 
   // Initialize with welcome message
   useEffect(() => {
@@ -288,24 +315,83 @@ const EvaChatbot: React.FC<ChatbotProps> = ({ apiKey = 'demo-key' }) => {
     }, 100);
   };
 
-  // Speech recognition (placeholder)
-  const toggleSpeechRecognition = () => {
-    setIsListening(!isListening);
-    toast({
-      title: language === 'ar' ? 'التعرف على الصوت' : 'Speech Recognition',
-      description: language === 'ar' ? 'سيتم تفعيل هذه الميزة قريباً' : 'This feature will be activated soon'
-    });
-  };
+// Speech recognition (Web Speech API)
+const toggleSpeechRecognition = () => {
+  try {
+    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) {
+      toast({
+        title: language === 'ar' ? 'غير مدعوم' : 'Not supported',
+        description: language === 'ar' ? 'متصفحك لا يدعم التعرف على الصوت' : 'Your browser does not support speech recognition'
+      });
+      return;
+    }
 
-  // Text to speech (placeholder)
-  const toggleTextToSpeech = () => {
-    setIsSpeaking(!isSpeaking);
-    toast({
-      title: language === 'ar' ? 'التحويل إلى صوت' : 'Text to Speech',
-      description: language === 'ar' ? 'سيتم تفعيل هذه الميزة قريباً' : 'This feature will be activated soon'
-    });
-  };
+    if (isListening) {
+      recognitionRef.current?.stop?.();
+      setIsListening(false);
+      return;
+    }
 
+    const rec = new SpeechRecognitionCtor();
+    recognitionRef.current = rec;
+    rec.lang = language === 'ar' ? 'ar-EG' : 'en-US';
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+
+    rec.onresult = (e: any) => {
+      const text = e.results?.[0]?.[0]?.transcript || '';
+      setInputValue(text);
+      setIsListening(false);
+      toast({
+        title: language === 'ar' ? 'تم الالتقاط' : 'Captured',
+        description: language === 'ar' ? 'تم تحويل الصوت إلى نص، اضغط إرسال' : 'Speech converted to text, press send'
+      });
+    };
+    rec.onerror = () => {
+      setIsListening(false);
+      toast({ title: language === 'ar' ? 'خطأ' : 'Error', description: language === 'ar' ? 'تعذر التعرف على الصوت' : 'Could not recognize speech' });
+    };
+    rec.onend = () => setIsListening(false);
+
+    rec.start();
+    setIsListening(true);
+  } catch (e) {
+    setIsListening(false);
+  }
+};
+
+// Text to Speech
+const toggleTextToSpeech = () => {
+  try {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    const lastBot = [...messages].reverse().find(m => !m.isUser);
+    if (!lastBot) {
+      toast({ title: language === 'ar' ? 'لا توجد رسالة' : 'No message', description: language === 'ar' ? 'لا توجد رسالة لقراءتها' : 'No bot message to read' });
+      return;
+    }
+    const utter = new SpeechSynthesisUtterance(lastBot.content);
+    utter.lang = language === 'ar' ? 'ar-EG' : 'en-US';
+    utter.onend = () => setIsSpeaking(false);
+    utter.onerror = () => setIsSpeaking(false);
+    utteranceRef.current = utter;
+    window.speechSynthesis.speak(utter);
+    setIsSpeaking(true);
+  } catch (e) {
+    setIsSpeaking(false);
+  }
+};
+
+useEffect(() => {
+  return () => {
+    recognitionRef.current?.stop?.();
+    window.speechSynthesis.cancel();
+  };
+}, []);
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
