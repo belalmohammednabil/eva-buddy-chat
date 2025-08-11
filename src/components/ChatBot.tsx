@@ -59,12 +59,70 @@ const detectTone = (text: string, language: 'ar' | 'en'): 'formal' | 'informal' 
   return informalCount > formalCount ? 'informal' : 'formal';
 };
 
+// Helper: format product details for rich, practical reply
+const formatProductDetails = (p: any, lang: 'ar' | 'en') => {
+  const benefits = Array.isArray(p.keyBenefits) ? p.keyBenefits.slice(0, 3).join(lang === 'ar' ? ' • ' : ' • ') : '';
+  const ingredients = Array.isArray(p.mainIngredients) ? p.mainIngredients.slice(0, 3).join(lang === 'ar' ? ' • ' : ' • ') : '';
+  const safe = p.safeDuringPregnancy ? (lang === 'ar' ? 'آمن للحمل' : 'Safe in pregnancy') : (lang === 'ar' ? 'غير موصى به أثناء الحمل' : 'Not advised in pregnancy');
+  const derm = p.dermatologistApproved ? (lang === 'ar' ? 'معتمد من أطباء الجلدية' : 'Dermatologist-approved') : '';
+  const usedBy = lang === 'ar'
+    ? `الأكثر استخدامًا: أصحاب ${p.targetType} (استنادًا إلى ${p.reviews} مراجعة)`
+    : `Most used by: ${p.targetType} (based on ${p.reviews} reviews)`;
+  const buy = `https://eva-cosmetics.com/p/${p.id}`;
+
+  if (lang === 'ar') {
+    return (
+      `• ${p.name} (ID: ${p.id})\n` +
+      `الفئة: ${p.category} – ${p.subcategory}\n` +
+      `مناسب لـ: ${p.targetType}\n` +
+      `المكونات الرئيسية: ${ingredients}\n` +
+      `الفوائد الأساسية: ${benefits}\n` +
+      `طريقة الاستخدام: ${p.usageRoutine}\n` +
+      `الآثار الجانبية/تحذيرات: ${p.warnings || '—'}\n` +
+      `${derm ? derm + ' • ' : ''}${safe}\n` +
+      `${usedBy}\n` +
+      `التقييم: ${p.rating}/5 • السعر: ${p.price} ج.م\n` +
+      `موصى به من: ${(p.recommendedBy || []).join(', ') || '—'}\n` +
+      `شراء مباشر: ${buy}`
+    );
+  }
+  return (
+    `• ${p.name} (ID: ${p.id})\n` +
+    `Category: ${p.category} – ${p.subcategory}\n` +
+    `Best for: ${p.targetType}\n` +
+    `Key ingredients: ${ingredients}\n` +
+    `Key benefits: ${benefits}\n` +
+    `How to use: ${p.usageRoutine}\n` +
+    `Side effects/Warnings: ${p.warnings || '—'}\n` +
+    `${derm ? derm + ' • ' : ''}${safe}\n` +
+    `${usedBy}\n` +
+    `Rating: ${p.rating}/5 • Price: EGP ${p.price}\n` +
+    `Recommended by: ${(p.recommendedBy || []).join(', ') || '—'}\n` +
+    `Buy: ${buy}`
+  );
+};
+
 // Enhanced Eva data search with comprehensive matching
 const searchEvaData = (query: string, userLanguage: 'ar' | 'en'): string | null => {
   const lowerQuery = query.toLowerCase();
   const data = EVA_COMPANY_DATA;
 
-  // 1) Skin problem analysis -> product recommendations
+  // 0) Greeting detection -> onboarding to skin consultation
+  const GREETINGS = {
+    ar: ['ازيك', 'إزيك', 'صباح الخير', 'مساء الخير', 'سلام', 'أهلا', 'مرحبا', 'هاي', 'ازيك يا شات', 'يا شات', 'اهلا يا شات'],
+    en: ['hi', 'hello', 'hey', 'good morning', 'good evening', 'good afternoon']
+  } as const;
+  const isGreeting = (userLanguage === 'ar'
+    ? GREETINGS.ar.some(g => lowerQuery.includes(g))
+    : GREETINGS.en.some(g => lowerQuery.includes(g))
+  );
+  if (isGreeting) {
+    return userLanguage === 'ar'
+      ? `${SKIN_CONSULTATION.greetings[0]}\nاسأليني مثلاً: \'بشرتي دهنية وفيها حبوب – أستخدم إيه؟\' أو سجلي صوتك من أيقونة الميكروفون.`
+      : `${SKIN_CONSULTATION.greetings[0]}\nAsk me: 'My skin is oily with acne – what should I use?' or record audio via the mic icon.`;
+  }
+
+  // 1) Skin problem analysis -> detailed product recommendations
   try {
     const matchedProblems = Object.entries(SKIN_ANALYSIS.problemKeywords)
       .filter(([_, keywords]) => keywords.some(k => lowerQuery.includes(k.toLowerCase())))
@@ -72,7 +130,7 @@ const searchEvaData = (query: string, userLanguage: 'ar' | 'en'): string | null 
 
     if (matchedProblems.length > 0) {
       const ids = Array.from(new Set(matchedProblems.flatMap(p => (SKIN_ANALYSIS.solutions as any)[p] || [])));
-      const prods = evaProducts.filter(p => ids.includes(p.id)).slice(0, 5);
+      const prods = evaProducts.filter(p => ids.includes(p.id)).slice(0, 3);
 
       const arMap: Record<string, string> = {
         acne: 'حبوب', oily: 'بشرة دهنية', dry: 'جفاف', sensitive: 'حساسية', aging: 'شيخوخة', darkSpots: 'تصبغات', pores: 'مسام واسعة', dullness: 'بهتان'
@@ -89,12 +147,14 @@ const searchEvaData = (query: string, userLanguage: 'ar' | 'en'): string | null 
         ? 'Important: choose science-based products, not trends. These are safe, dermatologist-backed picks.'
         : SKIN_CONSULTATION.medicalAdvice[1];
 
-      const listAR = prods.map(p => `• ${p.name} (ID: ${p.id}) — ${(p.keyBenefits?.[0] || '').trim()}\nسعر: ${p.price} EGP • شراء: https://eva-cosmetics.com/p/${p.id}`).join('\n');
-      const listEN = prods.map(p => `• ${p.name} (ID: ${p.id}) — ${(p.keyBenefits?.[0] || '').trim()}\nPrice: EGP ${p.price} • Buy: https://eva-cosmetics.com/p/${p.id}`).join('\n');
+      const details = prods.map(p => formatProductDetails(p, userLanguage)).join('\n\n');
+
+      const footerAR = `\n\n${SKIN_CONSULTATION.medicalAdvice[2]}\nلو عايزة أشوف كل الاختيارات، قولي: \'عرض الكل\' أو اسألي عن منتج برقم الـID.`;
+      const footerEN = `\n\n${SKIN_CONSULTATION.medicalAdvice[2]}\nSay 'show all' for more options or ask by product ID.`;
 
       return userLanguage === 'ar'
-        ? `بناءً على وصفك (${problemsLabelAR})، دي أفضل ترشيحات مناسبة لك:\n${listAR}\n\n${cautionAR}`
-        : `Based on your description (${problemsLabelEN}), here are top picks for you:\n${listEN}\n\n${cautionEN}`;
+        ? `بناءً على وصفك (${problemsLabelAR})، دي أفضل ترشيحات مناسبة ليكي بالتفاصيل:\n\n${details}\n\n${cautionAR}${footerAR}`
+        : `Based on your description (${problemsLabelEN}), here are the best detailed picks for you:\n\n${details}\n\n${cautionEN}${footerEN}`;
     }
   } catch {}
   
